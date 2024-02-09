@@ -1,10 +1,13 @@
 import requests
 from .auth import Authenticator
 
+from .auth import Authenticator
+
 class API_Client:
-    def __init__(self, base_url):
-        self.base_url = base_url
-        self.auth = Authenticator()
+    def __init__(self, base_api_url, developer_token):
+        self.base_api_url = base_api_url
+        self.authenticator = Authenticator(base_api_url, developer_token)
+        self.api_token = self.authenticator.get_token()  # Obtain the API token upon instantiation
 
     def get_products(self):
         # New method specifically for getting products
