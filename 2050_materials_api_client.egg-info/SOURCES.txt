@@ -1,0 +1,14 @@
+LICENSE
+README.md
+setup.py
+2050_materials_api_client.egg-info/PKG-INFO
+2050_materials_api_client.egg-info/SOURCES.txt
+2050_materials_api_client.egg-info/dependency_links.txt
+2050_materials_api_client.egg-info/requires.txt
+2050_materials_api_client.egg-info/top_level.txt
+materials_2050_api_client/__init__.py
+materials_2050_api_client/auth.py
+materials_2050_api_client/client.py
+materials_2050_api_client/utils.py
+tests/__init__.py
+tests/test_client.py
