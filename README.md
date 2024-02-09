@@ -20,3 +20,71 @@ Navigate to the root directory of the cloned repository where the setup.py file 
 ```
 pip install .
 ```
+
+## Class: API_Client
+
+The `API_Client` class serves as the main interface to the 2050-materials API.
+
+### Initialization
+
+To use the `API_Client`, initialize it with the base API URL and your developer token:
+
+```
+from materials_2050_api_client import API_Client
+
+client = API_Client(base_api_url="https://app.2050-materials.com/", developer_token="your_developer_token_here")
+```
+
+
+### Methods
+
+#### `get_products`
+
+Fetches a list of products from the API.
+
+```
+products = client.get_products()
+```
+
+#### get_products_open_api
+Fetches a list of products using the open API endpoint.
+
+```
+products_open_api = client.get_products_open_api()
+```
+
+#### `get_filters`
+Retrieves all available filters from the API.
+
+```
+filters = client.get_filters()
+```
+
+#### `get_open_filters`
+Fetches a subset of filters, specifically for 'product_type', 'material_types', 'company', 'manufacturing_country', and 'continent'.
+
+```
+open_filters = client.get_open_filters()
+```
+
+#### `get_product_types`
+Extracts and returns a dictionary of product types from the filters.
+
+```
+product_types = client.get_product_types()
+
+```
+
+#### `get_material_types`
+Extracts and returns a dictionary of product types from the filters.
+
+```
+material_types = client.get_product_types()
+
+```
+
+#### get_filtered_data_open_api
+Filters the get_products_open_api data based on provided filters. This method accepts a page parameter for pagination and arbitrary keyword arguments `(**filters)` for filtering.
+```
+filtered_products = client.get_filtered_data_open_api(page=1, name="Product Name", product_type=71)
+```
