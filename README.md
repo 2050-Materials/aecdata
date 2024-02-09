@@ -11,8 +11,8 @@ Since this repository is private, you'll need to install the library locally. To
 First, clone the repository to your local machine. You'll need access to the repository to do this. If you haven't configured SSH keys for GitHub, you might be prompted to enter your username and password.
 
 ```
-git clone https://github.com/yourusername/2050-materials-api-client.git
-cd 2050-materials-api-client
+git clone https://github.com/2050-Materials/materials_2050_api_client.git
+cd materials_2050_api_client
 ```
 
 ### Install library
