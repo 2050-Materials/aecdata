@@ -9,8 +9,8 @@ class API_Client:
         self.authenticator = Authenticator(base_api_url, developer_token)
         self.api_token = self.authenticator.get_token()  # Obtain the API token upon instantiation
 
-    def get_products(self):
-        get_products_url = f'{self.base_api_url}developer/api/get_products'
+    def get_products(self, page=1):
+        get_products_url = f'{self.base_api_url}developer/api/get_products?page={page}'
         headers = {
             'Authorization': f'Bearer {self.api_token}',
             'Content-Type': 'application/json',
@@ -24,8 +24,8 @@ class API_Client:
         except requests.RequestException as e:
             raise Exception(f"Failed call to get_products API: {e}")
 
-    def get_products_open_api(self):
-        get_products_open_api_url = f'{self.base_api_url}developer/api/get_products_open_api'
+    def get_products_open_api(self, page=1):
+        get_products_open_api_url = f'{self.base_api_url}developer/api/get_products_open_api?page={page}'
         headers = {
             'Authorization': f'Bearer {self.api_token}',
             'Content-Type': 'application/json',

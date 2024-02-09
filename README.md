@@ -40,17 +40,17 @@ client = API_Client(base_api_url="https://app.2050-materials.com/", developer_to
 
 #### `get_products`
 
-Fetches a list of products from the API.
+Fetches a list of products from the API. Accepts a page parameter for pagination.
 
 ```
-products = client.get_products()
+products = client.get_products(page=1)
 ```
 
-#### get_products_open_api
-Fetches a list of products using the open API endpoint.
+#### `get_products_open_api`
+Fetches a list of products using the open API endpoint. Accepts a page parameter for pagination.
 
 ```
-products_open_api = client.get_products_open_api()
+products_open_api = client.get_products_open_api(page=1)
 ```
 
 #### `get_filters`
@@ -83,7 +83,7 @@ material_types = client.get_product_types()
 
 ```
 
-#### get_filtered_data_open_api
+#### `get_filtered_data_open_api`
 Filters the get_products_open_api data based on provided filters. This method accepts a page parameter for pagination and arbitrary keyword arguments `(**filters)` for filtering.
 ```
 filtered_products = client.get_filtered_data_open_api(page=1, name="Product Name", product_type=71)
