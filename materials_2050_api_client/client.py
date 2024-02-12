@@ -4,10 +4,22 @@ from .auth import Authenticator
 from .auth import Authenticator
 
 class API_Client:
-    def __init__(self, base_api_url, developer_token):
+    def __init__(self, developer_token, base_api_url = "https://app.2050-materials.com/"):
         self.base_api_url = base_api_url
-        self.authenticator = Authenticator(base_api_url, developer_token)
-        self.api_token = self.authenticator.get_token()  # Obtain the API token upon instantiation
+        self.authenticator = Authenticator(developer_token, base_api_url)
+        self.api_token, self.refresh_token = self.authenticator.get_api_and_refresh_token()
+
+    def refresh_api_token(self):
+        """
+        Refreshes the API token using the Authenticator's refresh_api_token method.
+        Also updates the API_Client's api_token with the new token.
+        """
+        try:
+            self.authenticator.refresh_api_token()  # This updates the authenticator's api_token
+            self.api_token = self.authenticator.api_token  # Update the API_Client's api_token
+            print("API Token refreshed successfully.")
+        except Exception as e:
+            print(f"Error refreshing API token: {e}")
 
     def get_products(self, page=1):
         get_products_url = f'{self.base_api_url}developer/api/get_products?page={page}'
