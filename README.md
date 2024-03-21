@@ -20,71 +20,63 @@ Navigate to the root directory of the cloned repository where the setup.py file 
 ```
 pip install .
 ```
+## API Authentication and Client Usage Documentation
 
-## Class: API_Client
+## `Authenticator` Class (`auth.py`)
 
-The `API_Client` class serves as the main interface to the 2050-materials API.
+The `Authenticator` class is designed to handle the authentication process for accessing the API. It manages both API tokens and refresh tokens to ensure continued access.
 
 ### Initialization
 
-To use the `API_Client`, initialize it with the base API URL and your developer token:
-
-```
-from materials_2050_api_client import API_Client
-
-client = API_Client(base_api_url="https://app.2050-materials.com/", developer_token="your_developer_token_here")
-```
-
+-   `__init__(self, developer_token, base_api_url)`: Initializes the `Authenticator` instance.
+    -   `developer_token`: The developer token provided for API access.
+    -   `base_api_url`: The base URL for the API endpoints.
 
 ### Methods
 
-#### `get_products`
+-   `get_token(self)`: Retrieves the API token using the developer token. This method is ideal for operations that only require a single API token without the need for a refresh token.
+-   `get_api_and_refresh_token(self)`: Retrieves both the API token and a refresh token. This is useful for long-running applications that may need to refresh the API token.
+-   `refresh_api_token(self)`: Refreshes the API token using the refresh token. This method should be used when the API token has expired and a new one is needed without re-authenticating using the developer token.
 
-Fetches a list of products from the API. Accepts a page parameter for pagination.
+## `API_Client` Class (`client.py`)
+
+The `API_Client` class provides methods to interact with the API, utilizing the `Authenticator` for handling authentication.
+
+### Initialization
+
+-   `__init__(self, developer_token, base_api_url = "https://app.2050-materials.com/")`: Creates an `API_Client` instance.
+    -   `developer_token`: The developer token provided for API access.
+    -   `base_api_url`: The base URL for the API endpoints. Defaults to the 2050-materials API.
+
+### Methods
+
+-   `refresh_api_token(self)`: Refreshes the API token. Utilizes the `Authenticator`'s `refresh_api_token` method and updates the client's API token.
+-   `get_products(self, page=1)`: Fetches products from the API. Supports pagination.
+-   `get_products_open_api(self, page=1)`: Fetches products from an open API endpoint, if available. Supports pagination.
+-   `get_filters(self)`: Retrieves filter options for querying products.
+-   `get_open_filters(self)`: Filters and returns a subset of the available filters based on predefined criteria.
+-   `get_filters_mapping(self)`: Creates and returns a mapping of filter options for easier use in queries.
+-   `get_filtered_data_page(self, page=1, **filters)`: Fetches a specific page of filtered product data.
+-   `get_filtered_data(self, **filters)`: Fetches all pages of filtered product data based on the provided filters.
+-   `get_filtered_data_open_api(self, page=1, **filters)`: Fetches a specific page of filtered product data from an open API endpoint, supporting custom filters.
+
+## Usage Example
 
 ```
+# Initialize the API client with your developer token
+client = API_Client(developer_token="your_developer_token_here")
+
+# Refresh the API token
+client.refresh_api_token()
+
+# Fetch and print the first page of products
 products = client.get_products(page=1)
+print(products)
+
+# Get and apply filters for product queries
+filters = client.get_filters_mapping()
+filtered_data = client.get_filtered_data(product_type=filters['product_type']['Concrete'])
+print(filtered_data)
 ```
 
-#### `get_products_open_api`
-Fetches a list of products using the open API endpoint. Accepts a page parameter for pagination.
-
-```
-products_open_api = client.get_products_open_api(page=1)
-```
-
-#### `get_filters`
-Retrieves all available filters from the API.
-
-```
-filters = client.get_filters()
-```
-
-#### `get_open_filters`
-Fetches a subset of filters, specifically for 'product_type', 'material_types', 'company', 'manufacturing_country', and 'continent'.
-
-```
-open_filters = client.get_open_filters()
-```
-
-#### `get_product_types`
-Extracts and returns a dictionary of product types from the filters.
-
-```
-product_types = client.get_product_types()
-
-```
-
-#### `get_material_types`
-Extracts and returns a dictionary of product types from the filters.
-
-```
-material_types = client.get_product_types()
-
-```
-
-#### `get_filtered_data_open_api`
-Filters the get_products_open_api data based on provided filters. This method accepts a page parameter for pagination and arbitrary keyword arguments `(**filters)` for filtering.
-```
-filtered_products = client.get_filtered_data_open_api(page=1, name="Product Name", product_type=71)
-```
+This documentation provides a comprehensive overview of the classes and methods for authenticating and interacting with the API. Developers can use this guide to understand how to implement these classes in their own applications for efficient API usage.
