@@ -2,6 +2,7 @@ import requests
 from .auth import Authenticator
 
 from .auth import Authenticator
+from .utils import *
 
 class API_Client:
     def __init__(self, developer_token, base_api_url = "https://app.2050-materials.com/"):
@@ -72,29 +73,93 @@ class API_Client:
                         i in ['product_type', 'material_types', 'company', 'manufacturing_country', 'continent']}
         return open_filters
 
-    def get_product_types(self):
-        filters = self.get_filters()  # Assume this method already fetches the full filters dictionary
-        product_types = {}
-        if 'product_type' in filters:
-            for item in filters['product_type']['filter_options']:
-                product_types[item['name']] = item['id']
-        else:
-            raise Exception("Product type filters not found")
-        return product_types
+    def get_filters_mapping(self):
+        filters = self.get_filters()  # Retrieve the filters
+        filter_mappings = {}  # Initialize the dictionary to hold all mappings
 
-    def get_material_types(self):
-        filters = self.get_filters()  # Assume this method already fetches the full filters dictionary
-        material_types = {}
-        if 'material_types' in filters:
-            for item in filters['material_types']['filter_options']:
-                material_types[item['name']] = item['id']
-        else:
-            raise Exception("Material type filters not found")
-        return material_types
+        # Iterate over each filter category in the filters
+        for filter_key, filter_value in filters.items():
+            if 'filter_options' in filter_value:
+                # If filter_options is present, create a mapping for this category
+                category_mapping = {}
+                for item in filter_value['filter_options']:
+                    if 'name' in item:
+                        category_mapping[item['name']] = item['id']
+                    elif 'performance' in item:
+                        category_mapping[item['performance']] = item['id']
+                    elif 'key' in item:
+                        category_mapping[item['option']] = item['key']
+                # Assign the category mapping to the corresponding filter key
+                filter_mappings[filter_key] = category_mapping
+            else:
+                # Optionally, handle the absence of filter_options in any category if needed
+                pass  # For now, we simply pass, but you could raise an error or log a warning
+
+        return filter_mappings
+
+    def get_filters_template(self):
+        return parameters_description
+
+    def get_filtered_data_page(self, page=1, **filters):
+
+        base_url = f'{self.base_api_url}developer/api/get_products'  # Use 'get_products' endpoint if needed
+
+        # Prepare query components based on filters
+        query_components = []
+        for key, value in filters.items():
+            if isinstance(value, list) or isinstance(value, set):
+                for subvalue in value:
+                    query_components.append(f'{key}={subvalue}')
+            else:
+                query_components.append(f'{key}={value}')
+
+        # Construct the final URL with all filters applied
+        filter_query = '&'.join(query_components)
+        url = f"{base_url}?page={page}&{filter_query}" if filters else f"{base_url}?page={page}"
+
+        headers = {
+            'Authorization': f'Bearer {self.api_token}',
+            'Content-Type': 'application/json',
+        }
+
+        try:
+            response = requests.get(url, headers=headers)
+            # response.raise_for_status()
+            print(response)
+            products = response.json()
+            return products
+        except requests.RequestException as e:
+            raise Exception(f"Failed call to get_filtered_data: {e}")
+
+    def get_filtered_data(self, **filters):
+        items_per_page = 200
+        all_products = []  # This will store all products across pages
+        page = 1  # Start from the first page
+
+        response = self.get_filtered_data_page(page, **filters)
+
+        total_products = response['TotalProducts']
+        # integer division trick to get one more page if there is a remainder
+        total_pages = (total_products + items_per_page - 1) // items_per_page
+
+        while page <= total_pages:
+
+            all_products.extend(response['results'])  # Append the current page's products
+
+            if total_pages>1:
+                print(f'Large number of products. Finished fetching page {page} out of {total_pages}')
+            page += 1  # Go to the next page
+
+            if not response['next']:
+                break  # If no response, exit the loop
+            else:
+                response = self.get_filtered_data_page(page, **filters)
+
+        return all_products
 
     def get_filtered_data_open_api(self, page=1, **filters):
-        # Choose the correct base URL based on whether filters are provided or not
-        base_url = f'{self.base_api_url}developer/api/get_products_open_api'  # Use 'get_products' endpoint if needed
+
+        base_url = f'{self.base_api_url}developer/api/get_products_open_api'
 
         # Prepare query components based on filters
         query_components = []
@@ -120,6 +185,8 @@ class API_Client:
             return products
         except requests.RequestException as e:
             raise Exception(f"Failed call to get_filtered_data_open_api: {e}")
+
+
 
 
 

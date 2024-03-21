@@ -6,5 +6,7 @@ setup(
     packages=find_packages(),
     install_requires=[
         "requests",  # Add your dependencies here
+        "numpy",
+        "pandas",
     ],
 )

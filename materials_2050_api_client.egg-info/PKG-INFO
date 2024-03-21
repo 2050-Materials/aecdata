@@ -1,11 +1,7 @@
 Metadata-Version: 2.1
-Name: materials-2050-api-client
+Name: materials_2050_api_client
 Version: 0.1
-Summary: UNKNOWN
-Home-page: UNKNOWN
-License: UNKNOWN
-Platform: UNKNOWN
 License-File: LICENSE
-
-UNKNOWN
-
+Requires-Dist: requests
+Requires-Dist: numpy
+Requires-Dist: pandas
