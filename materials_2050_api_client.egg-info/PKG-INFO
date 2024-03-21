@@ -1,7 +1,0 @@
-Metadata-Version: 2.1
-Name: materials_2050_api_client
-Version: 0.1
-License-File: LICENSE
-Requires-Dist: requests
-Requires-Dist: numpy
-Requires-Dist: pandas
