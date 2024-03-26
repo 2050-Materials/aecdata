@@ -35,11 +35,16 @@ lca_fields_impact = ['abiotic_depletion_potential_non_fossil', 'acidification_po
 
 lca_fields = lca_fields_input + lca_fields_output + lca_fields_impact
 
+
 lca_modules = [
     'A1', 'A2', 'A3', 'A1A2A3', 'A4', 'A5', 'B1', 'B2', 'B3',
     'B4', 'B5', 'B6', 'B7', 'C1', 'C2', 'C3', 'C4', 'D'
 ]
 
+all_breakdown_fields = []
+for lca_field in lca_fields:
+    for lca_module in lca_modules:
+        all_breakdown_fields.append(f'breakdown__{lca_field}__{lca_module}')
 
 unit_to_field_mapping = {
     ('kg', 'm3'): 'density',
