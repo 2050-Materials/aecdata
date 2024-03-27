@@ -7,28 +7,40 @@ from .utils import *
 
 # Ensure all instances of this specific warning are always shown
 warnings.simplefilter('always', UserWarning)
+
 class ProductData:
-
     def __init__(self, data):
-        """
-        Initializes the ProductData with the data to be processed. Depending on the type of data provided,
-        populates both a dictionary and a DataFrame representation of the data.
+        self._data = None
+        self._dataframe = None
 
-        :param data: A pandas DataFrame or a dictionary representing the product data.
-        """
         if isinstance(data, list):
-            self.data = data
-            self.dataframe = self.to_dataframe().replace({np.nan: None})
+            self.data = data  # This will trigger the setter to update both _data and _dataframe
         elif isinstance(data, pd.DataFrame):
-            df = data.copy()
-            self.dataframe = df
-            self.data = self.df_to_list(df)
+            self.dataframe = data  # This will trigger the setter to update both _data and _dataframe
         else:
             raise ValueError("Unsupported data type. Please provide a list of products or a pandas DataFrame.")
 
+    @property
+    def data(self):
+        return self._data
+
+    @data.setter
+    def data(self, value):
+        self._data = value
+        self._dataframe = self.to_dataframe(value).replace({np.nan: None})
+
+    @property
+    def dataframe(self):
+        return self._dataframe
+
+    @dataframe.setter
+    def dataframe(self, value):
+        self._dataframe = value.replace({np.nan: None})
+        self._data = self.df_to_list(value)
+
     def df_to_list(self, df):
 
-        df.replace({np.nan: None}, inplace=True)
+        df = df.replace({np.nan: None})
 
         def remove_nulls(d):
             """Recursively remove dictionary keys with None values and empty dictionaries."""
@@ -62,7 +74,7 @@ class ProductData:
         nested_data = [row_to_nested_dict(row) for index, row in df.iterrows()]
         return nested_data
 
-    def to_dataframe(self):
+    def to_dataframe(self, data):
         """
         Converts the data into a pandas DataFrame, ensuring that columns
         starting with 'material_facts' are placed at the end and sorted.
@@ -70,7 +82,7 @@ class ProductData:
         :return: pandas DataFrame containing the data with ordered columns.
         """
         # Normalize the data to create an initial dataframe
-        df = pd.json_normalize(self.data)
+        df = pd.json_normalize(data)
 
         # Separate columns starting with 'material_facts'
         material_facts_cols = [col for col in df.columns if col.startswith('material_facts')]
@@ -180,8 +192,8 @@ class ProductStatistics(ProductData):
         if unit == 'declared_unit':
             warnings.warn(
                 "Unit is set to 'declared_unit'. Be advised that LCA fields are not expressed in "
-                "the same unit, which may affect the validity of applying statistical methods to these fields."
-                "We recommend that you set a unit e.g. unit='kg'.",
+                "the same unit, which may affect the validity of applying statistical methods to these fields. "
+                "We recommend you set a unit using the 'unit' parameter e.g. unit='kg'.",
                 UserWarning  # This is the default, but specifying it makes the intention clear
             )
 
@@ -194,14 +206,16 @@ class ProductStatistics(ProductData):
 
         # Since the unit is valid, proceed to convert the DataFrame to the specified unit
         df = self.convert_df_to_unit(unit)
-        df['estimated'] = df[f'material_facts.scaling_factors.{unit}.estimated']
+        if unit in available_units:
+            df['estimated'] = df[f'material_facts.scaling_factors.{unit}.estimated']
+        elif unit == 'declared_unit':
+            df['estimated'] = False
 
         self.dataframe = df
         self.data = self.df_to_list(df)
 
         # Store the unit for potential future reference
         self.unit = unit
-
 
     def get_lca_fields(self, fields='all', modules='all'):
         """
@@ -217,7 +231,7 @@ class ProductStatistics(ProductData):
             fields = lca_fields  # lca_fields should be defined in your utils.py or within this class
 
         if modules == 'all':
-            modules = lca_modules  # lca_modules should be defined in your utils.py or within this class
+            modules = list(lca_modules.keys())  # lca_modules should be defined in your utils.py or within this class
 
         all_lca_fields = []
         for field in fields:
@@ -265,7 +279,6 @@ class ProductStatistics(ProductData):
         return fields
 
     # Function to apply filters based on a single combination
-    # A function to apply filters from a dict to a DataFrame
     def filter_df_by_dict(self, df, filter_dict):
         # Start with the full DataFrame
         filtered_df = df
@@ -275,6 +288,7 @@ class ProductStatistics(ProductData):
             # You might need to handle nested keys or other special cases
             filtered_df = filtered_df[filtered_df[key] == value]
         return filtered_df
+
     def get_group_by_combinations(self, df, group_by, min_count):
         # Filter out any None values upfront
         filtered_group_by = {k: v for k, v in group_by.items() if v is not None}
@@ -416,6 +430,7 @@ class ProductStatistics(ProductData):
             }
             filtered_dict = {k: field_statistics[k] for k in statistical_metrics}
             return filtered_dict
+
         df = self.dataframe
 
         # Initialize DataFrame

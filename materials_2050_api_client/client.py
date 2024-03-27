@@ -1,5 +1,4 @@
 import requests
-from .auth import Authenticator
 
 from .auth import Authenticator
 from .utils import *
@@ -22,35 +21,47 @@ class API_Client:
         except Exception as e:
             print(f"Error refreshing API token: {e}")
 
-    # def get_products(self, page=1):
-    #     get_products_url = f'{self.base_api_url}developer/api/get_products?page={page}'
-    #     headers = {
-    #         'Authorization': f'Bearer {self.api_token}',
-    #         'Content-Type': 'application/json',
-    #     }
-    #
-    #     try:
-    #         response = requests.get(get_products_url, headers=headers)
-    #         response.raise_for_status()
-    #         products = response.json()
-    #         return products
-    #     except requests.RequestException as e:
-    #         raise Exception(f"Failed call to get_products API: {e}")
+    def get_filters_template(self):
+        return filters_template
 
-    # def get_products_open_api(self, page=1):
-    #     get_products_open_api_url = f'{self.base_api_url}developer/api/get_products_open_api?page={page}'
-    #     headers = {
-    #         'Authorization': f'Bearer {self.api_token}',
-    #         'Content-Type': 'application/json',
-    #     }
-    #
-    #     try:
-    #         response = requests.get(get_products_open_api_url, headers=headers)
-    #         response.raise_for_status()
-    #         products = response.json()
-    #         return products
-    #     except requests.RequestException as e:
-    #         raise Exception(f"Failed call to get_products_open_api API: {e}")
+    def get_all_field_description(self):
+        return field_description
+
+    def get_input_lca_fields_description(self):
+        return field_description['lca_fields']['input_fields']
+
+    def get_output_lca_fields_description(self):
+        return field_description['lca_fields']['output_fields']
+
+    def get_impact_lca_fields_description(self):
+        return field_description['lca_fields']['impact_fields']
+
+    def get_material_facts_fields_description(self):
+        return field_description['material_facts']
+
+    def get_physical_properties_fields_description(self):
+        return field_description['physical_properties']
+
+    def get_technical_parameters_fields_description(self):
+        return field_description['technical_parameters']
+
+    def get_product_fields_description(self):
+        return field_description['product_fields']
+
+    def get_unit_categories(self):
+        return unit_categories
+
+    def get_primary_units(self):
+        return primary_units
+
+    def get_mf_num_fields(self):
+        return mf_num_fields
+
+    def get_mf_perc_fields(self):
+        return mf_perc_fields
+
+    def get_physical_properties_fields(self):
+        return physical_properties_fields
 
     def get_filters(self):
         get_filters_url = f'{self.base_api_url}developer/api/get_product_filters'
@@ -93,9 +104,6 @@ class API_Client:
                 filter_mappings[filter_key] = category_mapping
 
         return filter_mappings
-
-    def get_filters_template(self):
-        return filters_template
 
     def get_products_page(self, page=1, **filters):
 
