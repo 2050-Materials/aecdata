@@ -497,7 +497,7 @@ class ProductStatistics(ProductData):
 
         return statistics_df.reset_index(drop=True)
 
-    def get_field_distribution(self, field=None, filters=None, return_df=False, include_estimated_values=False, remove_outliers=True, method='IQR', sqrt_tranf=True):
+    def get_field_distribution(self, field, filters=None, return_df=False, include_estimated_values=False, remove_outliers=True, method='IQR', sqrt_tranf=True):
         def remove_outliers_from_df(filtered_df, field, method, sqrt_tranf):
 
             '''Sqrt transformation'''
