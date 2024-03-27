@@ -8,5 +8,6 @@ setup(
         "requests",  # Add your dependencies here
         "numpy",
         "pandas",
+        "matplotlib",
     ],
 )

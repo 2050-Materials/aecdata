@@ -318,12 +318,7 @@ field_description['product_fields'] = {
     "uniclass_products": {"description": "Uniclass Products"},
 }
 
-
-lca_fields = []
-for category,fields in field_description['lca_fields'].items():
-    lca_fields += list(fields.keys())
-
-lca_modules = {
+field_description['lca_modules'] = {
     'A1': {'description': 'Raw material supply: Extraction and processing of raw materials.'},
     'A2': {'description': 'Transport to the manufacturer: Transportation of raw materials to the factory.'},
     'A3': {'description': 'Manufacturing: The manufacturing process of the product.'},
@@ -343,6 +338,12 @@ lca_modules = {
     'C4': {'description': 'Disposal: Final disposal of waste materials.'},
     'D': {'description': 'Benefits and loads beyond the system boundary: Credits for recycling, energy recovery, etc.'}
 }
+
+lca_fields = []
+for category,fields in field_description['lca_fields'].items():
+    lca_fields += list(fields.keys())
+
+lca_modules = list(field_description['lca_modules'].keys())
 
 unit_to_field_mapping = {
     ('kg', 'm3'): 'density',
@@ -370,13 +371,6 @@ mf_num_fields = [
     'manufacturing', 'manufacturing_corrected',
     'end_of_life', 'end_of_life_corrected',
     # 'carbon_sorting',
-]
-
-# lca fields that are related to the mf_num_fields fields
-related_lca_fields = [
-    'global_warming_potential_fossil', 'ozone_depletion_potential', 'net_fresh_water_use',
-    'global_warming_potential_biogenic',
-    'secondary_material_use', 'materials_for_energy_recovery', 'materials_for_recycling', 'components_for_reuse'
 ]
 
 mf_perc_fields = ["recycled_content", "recyclable_content", "reuse_potential", "energy_recovery_possibility"]

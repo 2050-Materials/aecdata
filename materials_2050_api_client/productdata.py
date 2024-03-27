@@ -3,6 +3,7 @@ import numpy as np
 import json
 import warnings
 from itertools import product
+import matplotlib.pyplot as plt
 from .utils import *
 
 # Ensure all instances of this specific warning are always shown
@@ -231,7 +232,7 @@ class ProductStatistics(ProductData):
             fields = lca_fields  # lca_fields should be defined in your utils.py or within this class
 
         if modules == 'all':
-            modules = list(lca_modules.keys())  # lca_modules should be defined in your utils.py or within this class
+            modules = lca_modules  # lca_modules should be defined in your utils.py or within this class
 
         all_lca_fields = []
         for field in fields:
@@ -260,7 +261,7 @@ class ProductStatistics(ProductData):
         }
         return group_by_dict
 
-    def get_available_fields(self):
+    def get_available_fields_dict(self):
         df = self.dataframe
         fields = {}
         all_lca_fields = []
@@ -278,7 +279,13 @@ class ProductStatistics(ProductData):
         fields['lca_field_modules'] = [field for field in all_lca_fields if field in df.columns]
         return fields
 
-    # Function to apply filters based on a single combination
+    def get_available_fields(self):
+        fields_dict = self.get_available_fields_dict()
+        available_fields = []
+        for category, field_list in fields_dict.items():
+            available_fields += field_list
+        return available_fields
+
     def filter_df_by_dict(self, df, filter_dict):
         # Start with the full DataFrame
         filtered_df = df
@@ -441,6 +448,7 @@ class ProductStatistics(ProductData):
 
         if fields is None or fields == 'all':
             fields = self.get_available_fields()
+
         if statistical_metrics is None:
             statistical_metrics = ['count', 'mean', 'median']
 
@@ -455,18 +463,6 @@ class ProductStatistics(ProductData):
 
         filter_conditions = self.get_group_by_combinations(df, group_by_dict, min_count)
 
-        # List of categories to check in 'fields'
-        categories = ['material_fact_numerical_fields', 'material_fact_percentage_fields', 'physical_properties_fields', 'lca_field_modules']
-
-        # Initialize a dictionary to hold the selected fields for each category
-        selected_fields = {category: [] for category in categories}
-
-        # Iterate over each category to find the selected fields
-        for category in categories:
-            if category in fields:
-                selected_fields[category] = [field for field in fields[category] if field in df.columns]
-
-        # Iterate through valid filter conditions
         for filter_condition in filter_conditions:
 
             count = filter_condition.pop('count', None)
@@ -474,15 +470,11 @@ class ProductStatistics(ProductData):
             stats_dict = {}
             name_dict = filter_condition.copy()
             name_dict['total_count'] = count
-            for category in categories:
-                if not selected_fields[category]:
-                    continue
-
-                for field_name in selected_fields[category]:
-                    filtered_df = filtered_materialfacts[[field_name]].dropna()
-                    if len(filtered_df) >= min_count:
-                        field_dict = get_field_statistics(statistical_metrics, field_name, filtered_df, remove_outliers, method, sqrt_tranf, min_count)
-                        stats_dict.update(field_dict)
+            for field_name in fields:
+                filtered_df = filtered_materialfacts[[field_name]].dropna()
+                if len(filtered_df) >= min_count:
+                    field_dict = get_field_statistics(statistical_metrics, field_name, filtered_df, remove_outliers, method, sqrt_tranf, min_count)
+                    stats_dict.update(field_dict)
 
             if stats_dict:
                 full_dict = {**name_dict, **stats_dict}
@@ -490,11 +482,7 @@ class ProductStatistics(ProductData):
                 new_row = new_row.dropna(axis=1, how='all')  # Drop columns where all values are NA
                 statistics_df = pd.concat([statistics_df, new_row], ignore_index=True)
 
-        calculated_fields =  [f"{field}.{metric}" for field in
-                                                    (
-                                                                selected_fields['material_fact_numerical_fields'] + selected_fields['material_fact_percentage_fields'] + selected_fields['physical_properties_fields'] + selected_fields['lca_field_modules'])
-                                                    for metric in
-                                                    statistical_metrics]
+        calculated_fields =  [f"{field}.{metric}" for field in fields for metric in statistical_metrics]
         name_fields = [field for field in statistics_df.columns if field not in calculated_fields]
         statistics_df = statistics_df.sort_values(name_fields)
         desired_column_order = list(name_fields) + calculated_fields
@@ -509,3 +497,94 @@ class ProductStatistics(ProductData):
 
         return statistics_df.reset_index(drop=True)
 
+    def get_field_distribution(self, field=None, filters=None, return_df=False, include_estimated_values=False, remove_outliers=True, method='IQR', sqrt_tranf=True):
+        def remove_outliers_from_df(filtered_df, field, method, sqrt_tranf):
+
+            '''Sqrt transformation'''
+            if sqrt_tranf:
+                # Check whether the majority is negative and flip the sign so we can apply sqrt transf
+                is_majority_negative = (filtered_df[field] < 0).sum() > (len(filtered_df) / 2)
+                if is_majority_negative:
+                    filtered_df.loc[:, field] = -filtered_df[field]
+
+                filtered_df = filtered_df[filtered_df[field] >= 0]
+                try:
+                    filtered_df[field] = np.sqrt(filtered_df[field])
+                except:
+                    sqrt_tranf = False
+
+            '''Drop products with z-scores greater than 1.96, which corresponds to 95% confidence'''
+            if method == 'zscore':
+                # Calculate z-scores of the values in the filtered_df[field]
+                mean = filtered_df[field].mean()
+                std_dev = filtered_df[field].std()
+                z_scores = np.abs((filtered_df[field] - mean) / std_dev)
+                # Filter out outliers
+                outlier_mask = z_scores > 1.96
+                filtered_df = filtered_df[~outlier_mask]
+
+            '''Repeat zscore method until the max outlier has z_value less than 5'''
+            if method == 'repeated_zscore':
+                z_max = 20
+                while z_max > 6:
+                    # Calculate z-scores of the values in the filtered_df[field]
+                    mean = filtered_df[field].mean()
+                    std_dev = filtered_df[field].std()
+                    z_scores = np.abs((filtered_df[field] - mean) / std_dev)
+                    # Filter out outliers (values with z-scores greater than 1.96, which corresponds to 95% confidence)
+                    outlier_mask = z_scores > 1.96
+                    filtered_df = filtered_df[~outlier_mask]
+                    z_max = z_scores.max()
+
+            if method == 'IQR':
+                # Calculate the first quartile (Q1), the third quartile (Q3), and the interquartile range (IQR)
+                Q1 = filtered_df[field].quantile(0.25)
+                Q3 = filtered_df[field].quantile(0.75)
+                IQR = Q3 - Q1
+
+                # Filter out outliers (values below Q1 - 1.5 * IQR or above Q3 + 1.5 * IQR)
+                outlier_mask = ~filtered_df[field].between(Q1 - 1.5 * IQR, Q3 + 1.5 * IQR)
+                filtered_df.index[outlier_mask].tolist()
+                filtered_df = filtered_df[~outlier_mask]
+
+            if sqrt_tranf:
+                filtered_df[field] = filtered_df[field] ** 2
+                # Fix the sign
+                if is_majority_negative:
+                    filtered_df[field] = - filtered_df[field]
+
+            return filtered_df
+
+        if filters:
+            df = self.filter_df_by_dict(self.dataframe, filters)
+        else:
+            df = self.dataframe
+
+        if not include_estimated_values:
+            df = df[df['estimated']==False]
+
+        if field not in self.get_available_fields():
+            raise ValueError(f"{field} is not available.")
+        else:
+            df = df.dropna(subset=[field])
+
+        if remove_outliers:
+            df = remove_outliers_from_df(df, field, method, sqrt_tranf)
+
+        # Plotting
+        bin_count = min(len(df[field].unique()), 50)  # Limit the number of bins to a maximum of 50
+        plt.figure(figsize=(10, 6))
+        n, bins, patches = plt.hist(df[field], bins=bin_count, color='#2ab0ff', alpha=0.7, rwidth=0.85)
+        plt.grid(axis='y', alpha=0.75)
+        plt.xlabel('Value', fontsize=15)
+        plt.ylabel('Frequency', fontsize=15)
+        plt.xticks(fontsize=12)
+        plt.yticks(fontsize=12)
+        plt.title(f'Distribution of {field}', fontsize=15)
+        plt.axvline(x=df[field].mean(), color='r', linestyle='-', label=f'Mean: {df[field].mean():.3f}')
+        plt.axvline(x=df[field].median(), color='m', linestyle='-', label=f'Median: {df[field].median():.3f}')
+        plt.legend(loc='upper right')
+        plt.show()
+
+        if return_df:
+            return df.reset_index(drop=True)
