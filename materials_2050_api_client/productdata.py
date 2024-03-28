@@ -4,7 +4,6 @@ import json
 import warnings
 from itertools import product
 import matplotlib.pyplot as plt
-import seaborn as sns
 from .utils import *
 
 # Ensure all instances of this specific warning are always shown
