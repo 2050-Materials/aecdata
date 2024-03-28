@@ -4,6 +4,7 @@ import json
 import warnings
 from itertools import product
 import matplotlib.pyplot as plt
+import seaborn as sns
 from .utils import *
 
 # Ensure all instances of this specific warning are always shown
@@ -93,7 +94,7 @@ class ProductData:
         sorted_material_facts_cols = sorted(material_facts_cols)
 
         # Combine the columns back together, with 'material_facts' columns at the end
-        ordered_columns = other_cols + sorted_material_facts_cols
+        ordered_columns = ['unique_product_uuid_v2'] + [col for col in other_cols if col!='unique_product_uuid_v2'] + sorted_material_facts_cols
 
         # Re-index the dataframe with the ordered columns
         return df[ordered_columns]
@@ -138,7 +139,7 @@ class ProductData:
         available_units = {col.split('.')[-2] for col in scaling_factor_columns if '.value' in col}
         return available_units
 
-    def convert_df_to_unit(self, unit='declared_unit'):
+    def convert_df_to_unit(self, df, unit='declared_unit', amount=1):
         # Extract available units
         available_units = self.get_available_units()
 
@@ -158,24 +159,81 @@ class ProductData:
             scalable_columns.append(f'material_facts.{field}')
 
         # Filter the list of all breakdown fields to those that exist in the dataframe
-        columns_to_scale = [col for col in scalable_columns if col in self.dataframe.columns]
+        columns_to_scale = [col for col in scalable_columns if col in df.columns]
 
         # Create new df that we will adjust
-        scaled_df = self.dataframe.copy()
+        scaled_df = df.copy()
 
         if unit != 'declared_unit':
-            # Column to use for scaling
             scaling_column = f'material_facts.scaling_factors.{unit}.value'
 
             # Ensure the scaling column exists
-            if scaling_column in self.dataframe.columns:
-                scaled_df.loc[:, columns_to_scale] = scaled_df.loc[:, columns_to_scale].div(self.dataframe.loc[:, scaling_column], axis=0)
+            if scaling_column in df.columns:
+                scaled_df.loc[:, columns_to_scale] = amount*scaled_df.loc[:, columns_to_scale].div(df.loc[:, scaling_column], axis=0)
                 return scaled_df
             else:
                 print(f'Unit scaling column "{scaling_column}" not found in DataFrame. No scaling applied.')
                 return None
         else:
+            scaled_df.loc[:, columns_to_scale] = amount * scaled_df.loc[:, columns_to_scale]
             return scaled_df
+
+    def scale_products_by_unit_and_amount(self, products_info):
+        # Create an empty DataFrame to hold the results
+        scaled_products_df = pd.DataFrame()
+
+        # Iterate over the items in the products_info dictionary
+        for uuid, info in products_info.items():
+            # Extract the unit and amount for the product
+            unit = info.get('unit', 'declared_unit')
+            amount = info.get('amount', 1)
+
+            # Find the row in the DataFrame for the current product UUID
+            product_row = self.dataframe[self.dataframe['unique_product_uuid_v2'] == uuid]
+
+            # If the product is found in the DataFrame
+            if not product_row.empty:
+                # Scale the DataFrame to the specified unit
+                scaled_row = self.convert_df_to_unit(product_row, unit, amount)
+
+                # If the DataFrame was successfully scaled
+                if scaled_row is not None:
+                    # # Scale the row by the specified amount
+                    # scaled_row = scaled_row.multiply(amount, axis=0)
+
+                    # Append the scaled row to the results DataFrame
+                    scaled_products_df = pd.concat([scaled_products_df, scaled_row], ignore_index=True)
+                else:
+                    print(f"Scaling to unit '{unit}' failed for product {uuid}.")
+            else:
+                print(f"Product UUID '{uuid}' not found in DataFrame.")
+
+        return scaled_products_df.reset_index(drop=True)
+
+    def plot_product_contributions(self, products_info, field_name):
+        # Use the existing method to scale the DataFrame
+        scaled_df = self.scale_products_by_unit_and_amount(products_info)
+
+        # Ensure the DataFrame is ready for operations
+        scaled_df = scaled_df.infer_objects()
+
+        # Check if the specified field is available
+        if field_name not in scaled_df.columns:
+            print(f"Field '{field_name}' not found in scaled DataFrame.")
+            return None
+
+        # Aggregate the data by summing the specified field, grouped by the 'name' attribute
+        contributions = scaled_df.groupby('name')[field_name].sum()
+
+        # Before plotting, ensure no silent downcasting occurs in future operations
+        pd.set_option('future.no_silent_downcasting', True)
+
+        # Plotting
+        plt.figure(figsize=(10, 8))
+        contributions.plot(kind='pie', autopct='%1.1f%%', startangle=90, counterclock=False, labels=contributions.index)
+        plt.title(f'Contribution of Each Product by {field_name}')
+        plt.ylabel('')  # Hide y-axis label for clarity
+        plt.show()
 
 
 class ProductStatistics(ProductData):
@@ -206,7 +264,7 @@ class ProductStatistics(ProductData):
             raise ValueError(f'Unit "{unit}" not available. Available units: {available_units}')
 
         # Since the unit is valid, proceed to convert the DataFrame to the specified unit
-        df = self.convert_df_to_unit(unit)
+        df = self.convert_df_to_unit(self.dataframe, unit)
         if unit in available_units:
             df['estimated'] = df[f'material_facts.scaling_factors.{unit}.estimated']
         elif unit == 'declared_unit':
@@ -291,9 +349,13 @@ class ProductStatistics(ProductData):
         filtered_df = df
         # Apply each filter
         for key, value in filter_dict.items():
-            # Adjust the filtering logic as needed, assuming equality here
-            # You might need to handle nested keys or other special cases
-            filtered_df = filtered_df[filtered_df[key] == value]
+            # Check if the column contains lists
+            if df[key].apply(lambda x: isinstance(x, list)).any():
+                # Use apply() to filter rows where the list contains the value
+                filtered_df = filtered_df[filtered_df[key].apply(lambda x: value in x)]
+            else:
+                # If the column does not contain lists, filter normally
+                filtered_df = filtered_df[filtered_df[key] == value]
         return filtered_df
 
     def get_group_by_combinations(self, df, group_by, min_count):
@@ -325,6 +387,21 @@ class ProductStatistics(ProductData):
                 valid_combinations.append(combination)
 
         return valid_combinations
+
+    def get_group_by_dict(self, df, group_by):
+        if group_by is None:
+            # Create a set from all unique strings in lists for 'product_type'
+            group_by_dict = {
+                'product_type': set(df['product_type'])}
+        else:
+            group_by_dict = {}
+            for group in group_by:
+                # Use set.union to combine all unique elements if the column contains lists
+                if df[group].apply(lambda x: isinstance(x, list)).any():
+                    group_by_dict[group] = set().union(*df[group].apply(lambda x: x if isinstance(x, list) else [x]))
+                else:
+                    group_by_dict[group] = set(df[group])
+        return group_by_dict
 
     def get_statistics(self, group_by=None, fields=None, statistical_metrics=None, include_estimated_values=False, remove_outliers=True, method='IQR', sqrt_tranf=True, min_count=4):
         def get_field_statistics(statistical_metrics, field, filtered_df, remove_outliers, method, sqrt_tranf, min_count):
@@ -440,7 +517,6 @@ class ProductStatistics(ProductData):
 
         df = self.dataframe
 
-        # Initialize DataFrame
         statistics_df = pd.DataFrame()
 
         if not include_estimated_values:
@@ -452,14 +528,7 @@ class ProductStatistics(ProductData):
         if statistical_metrics is None:
             statistical_metrics = ['count', 'mean', 'median']
 
-        # Set default group_by if not provided
-        if group_by is None:
-            group_by_dict = {'product_type': set(df['product_type'])}
-        else:
-            group_by_dict = {}
-            for group in group_by:
-                df.loc[:,group] = df[group].apply(lambda x: ', '.join(x) if isinstance(x, list) else x)
-                group_by_dict[group] = set(df[group])
+        group_by_dict = self.get_group_by_dict(df, group_by)
 
         filter_conditions = self.get_group_by_combinations(df, group_by_dict, min_count)
 
@@ -497,63 +566,64 @@ class ProductStatistics(ProductData):
 
         return statistics_df.reset_index(drop=True)
 
-    def get_field_distribution(self, field, filters=None, return_df=False, include_estimated_values=False, remove_outliers=True, method='IQR', sqrt_tranf=True):
-        def remove_outliers_from_df(filtered_df, field, method, sqrt_tranf):
+    def remove_outliers_from_df(self, filtered_df, field, method, sqrt_tranf):
 
-            '''Sqrt transformation'''
-            if sqrt_tranf:
-                # Check whether the majority is negative and flip the sign so we can apply sqrt transf
-                is_majority_negative = (filtered_df[field] < 0).sum() > (len(filtered_df) / 2)
-                if is_majority_negative:
-                    filtered_df.loc[:, field] = -filtered_df[field]
+        '''Sqrt transformation'''
+        if sqrt_tranf:
+            # Check whether the majority is negative and flip the sign so we can apply sqrt transf
+            is_majority_negative = (filtered_df[field] < 0).sum() > (len(filtered_df) / 2)
+            if is_majority_negative:
+                filtered_df.loc[:, field] = -filtered_df[field]
 
-                filtered_df = filtered_df[filtered_df[field] >= 0]
-                try:
-                    filtered_df[field] = np.sqrt(filtered_df[field])
-                except:
-                    sqrt_tranf = False
+            filtered_df = filtered_df[filtered_df[field] >= 0]
+            try:
+                filtered_df[field] = np.sqrt(filtered_df[field])
+            except:
+                sqrt_tranf = False
 
-            '''Drop products with z-scores greater than 1.96, which corresponds to 95% confidence'''
-            if method == 'zscore':
+        '''Drop products with z-scores greater than 1.96, which corresponds to 95% confidence'''
+        if method == 'zscore':
+            # Calculate z-scores of the values in the filtered_df[field]
+            mean = filtered_df[field].mean()
+            std_dev = filtered_df[field].std()
+            z_scores = np.abs((filtered_df[field] - mean) / std_dev)
+            # Filter out outliers
+            outlier_mask = z_scores > 1.96
+            filtered_df = filtered_df[~outlier_mask]
+
+        '''Repeat zscore method until the max outlier has z_value less than 5'''
+        if method == 'repeated_zscore':
+            z_max = 20
+            while z_max > 6:
                 # Calculate z-scores of the values in the filtered_df[field]
                 mean = filtered_df[field].mean()
                 std_dev = filtered_df[field].std()
                 z_scores = np.abs((filtered_df[field] - mean) / std_dev)
-                # Filter out outliers
+                # Filter out outliers (values with z-scores greater than 1.96, which corresponds to 95% confidence)
                 outlier_mask = z_scores > 1.96
                 filtered_df = filtered_df[~outlier_mask]
+                z_max = z_scores.max()
 
-            '''Repeat zscore method until the max outlier has z_value less than 5'''
-            if method == 'repeated_zscore':
-                z_max = 20
-                while z_max > 6:
-                    # Calculate z-scores of the values in the filtered_df[field]
-                    mean = filtered_df[field].mean()
-                    std_dev = filtered_df[field].std()
-                    z_scores = np.abs((filtered_df[field] - mean) / std_dev)
-                    # Filter out outliers (values with z-scores greater than 1.96, which corresponds to 95% confidence)
-                    outlier_mask = z_scores > 1.96
-                    filtered_df = filtered_df[~outlier_mask]
-                    z_max = z_scores.max()
+        if method == 'IQR':
+            # Calculate the first quartile (Q1), the third quartile (Q3), and the interquartile range (IQR)
+            Q1 = filtered_df[field].quantile(0.25)
+            Q3 = filtered_df[field].quantile(0.75)
+            IQR = Q3 - Q1
 
-            if method == 'IQR':
-                # Calculate the first quartile (Q1), the third quartile (Q3), and the interquartile range (IQR)
-                Q1 = filtered_df[field].quantile(0.25)
-                Q3 = filtered_df[field].quantile(0.75)
-                IQR = Q3 - Q1
+            # Filter out outliers (values below Q1 - 1.5 * IQR or above Q3 + 1.5 * IQR)
+            outlier_mask = ~filtered_df[field].between(Q1 - 1.5 * IQR, Q3 + 1.5 * IQR)
+            filtered_df.index[outlier_mask].tolist()
+            filtered_df = filtered_df[~outlier_mask]
 
-                # Filter out outliers (values below Q1 - 1.5 * IQR or above Q3 + 1.5 * IQR)
-                outlier_mask = ~filtered_df[field].between(Q1 - 1.5 * IQR, Q3 + 1.5 * IQR)
-                filtered_df.index[outlier_mask].tolist()
-                filtered_df = filtered_df[~outlier_mask]
+        if sqrt_tranf:
+            filtered_df[field] = filtered_df[field] ** 2
+            # Fix the sign
+            if is_majority_negative:
+                filtered_df[field] = - filtered_df[field]
 
-            if sqrt_tranf:
-                filtered_df[field] = filtered_df[field] ** 2
-                # Fix the sign
-                if is_majority_negative:
-                    filtered_df[field] = - filtered_df[field]
+        return filtered_df
 
-            return filtered_df
+    def filter_dataframe(self, field, filters=None, include_estimated_values=False, remove_outliers=True, method='IQR', sqrt_tranf=True):
 
         if filters:
             df = self.filter_df_by_dict(self.dataframe, filters)
@@ -561,17 +631,19 @@ class ProductStatistics(ProductData):
             df = self.dataframe
 
         if not include_estimated_values:
-            df = df[df['estimated']==False]
+            df = df[df['estimated'] == False]
 
         if field not in self.get_available_fields():
             raise ValueError(f"{field} is not available.")
-        else:
-            df = df.dropna(subset=[field])
+
+        df = df.dropna(subset=[field])
 
         if remove_outliers:
-            df = remove_outliers_from_df(df, field, method, sqrt_tranf)
+            df = self.remove_outliers_from_df(df, field, method, sqrt_tranf)
 
-        # Plotting
+        return df.reset_index(drop=True)
+
+    def plot_histogram(self, df, field):
         bin_count = min(len(df[field].unique()), 50)  # Limit the number of bins to a maximum of 50
         plt.figure(figsize=(10, 6))
         n, bins, patches = plt.hist(df[field], bins=bin_count, color='#2ab0ff', alpha=0.7, rwidth=0.85)
@@ -581,9 +653,42 @@ class ProductStatistics(ProductData):
         plt.xticks(fontsize=12)
         plt.yticks(fontsize=12)
         plt.title(f'Distribution of {field}', fontsize=15)
-        plt.axvline(x=df[field].mean(), color='r', linestyle='-', label=f'Mean: {df[field].mean():.3f}')
-        plt.axvline(x=df[field].median(), color='m', linestyle='-', label=f'Median: {df[field].median():.3f}')
+        plt.axvline(x=df[field].mean(), color='r', linestyle='-', label=f'Mean: {df[field].mean():.4f}')
+        plt.axvline(x=df[field].median(), color='m', linestyle='-', label=f'Median: {df[field].median():.4f}')
         plt.legend(loc='upper right')
+        plt.show()
+
+    def get_field_distribution(self, field, filters=None, include_estimated_values=False, remove_outliers=True, method='IQR', sqrt_tranf=True, return_df=False):
+        df = self.filter_dataframe(field, filters, include_estimated_values, remove_outliers, method, sqrt_tranf)
+
+        self.plot_histogram(df, field)
+
+        if return_df:
+            return df
+
+    def get_field_distribution_boxplot(self, field, group_by_field, filters=None, include_estimated_values=False, remove_outliers=True, method='IQR', sqrt_tranf=True, return_df=False):
+
+        df = self.filter_dataframe(field, filters, include_estimated_values, remove_outliers, method, sqrt_tranf)
+
+        if group_by_field not in df.columns:
+            raise ValueError(f"{group_by_field} column is not available in the DataFrame.")
+
+        # Get unique values for the group_by_field column
+        group_by_dict = self.get_group_by_dict(df, [group_by_field])
+
+        # Plotting
+        plt.figure(figsize=(10, 6))
+
+        # Create a boxplot for each unique value in the group_by_field column
+        grouped_data = [df[df[group_by_field] == value][field] for value in group_by_dict[group_by_field]]
+        plt.boxplot(grouped_data, patch_artist=True, labels=group_by_dict[group_by_field])
+
+        plt.grid(axis='y', alpha=0.75)
+        plt.xlabel(group_by_field, fontsize=15)
+        plt.ylabel('Value', fontsize=15)
+        plt.xticks(fontsize=12, rotation=45)  # Rotate labels if there are many groups
+        plt.yticks(fontsize=12)
+        plt.title(f'Distribution of {field} by {group_by_field}', fontsize=15)
         plt.show()
 
         if return_df:

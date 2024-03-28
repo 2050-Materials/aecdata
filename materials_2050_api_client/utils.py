@@ -22,7 +22,8 @@ field_description = {}
 
 field_description['lca_fields'] = {}
 
-field_description['lca_fields']['input_fields'] = {'net_fresh_water_use': {'description': 'Use of net fresh water',
+field_description['lca_fields']['input_fields'] = {
+ 'net_fresh_water_use': {'description': 'Use of net fresh water',
   'short_name': 'FW',
   'unit': 'kg'},
  'non_renewable_primary_energy': {'description': 'Use of non-renewable primary energy',
@@ -51,9 +52,11 @@ field_description['lca_fields']['input_fields'] = {'net_fresh_water_use': {'desc
   'unit': 'MJ'},
  'total_renewable_primary_energy': {'description': 'Total use of renewable primary energy resources',
   'short_name': 'PERT',
-  'unit': 'MJ'}}
+  'unit': 'MJ'}
+}
 
-field_description['lca_fields']['output_fields'] = {'components_for_reuse': {'description': 'Components for re-use',
+field_description['lca_fields']['output_fields'] = {
+ 'components_for_reuse': {'description': 'Components for re-use',
   'short_name': 'CRU',
   'unit': 'kg'},
  'exported_electrical_energy': {'description': 'Exported electrical energy',
@@ -76,9 +79,11 @@ field_description['lca_fields']['output_fields'] = {'components_for_reuse': {'de
   'unit': 'kg'},
  'radioactive_waste_disposed': {'description': 'Radioactive waste disposed',
   'short_name': 'RWD',
-  'unit': 'kg'}}
+  'unit': 'kg'}
+}
 
-field_description['lca_fields']['impact_fields'] = {'abiotic_depletion_potential_fossil': {'description': 'Abiotic depletion potential for fossil resources',
+field_description['lca_fields']['impact_fields'] = {
+ 'abiotic_depletion_potential_fossil': {'description': 'Abiotic depletion potential for fossil resources',
   'short_name': 'ADPF',
   'unit': 'MJ'},
  'abiotic_depletion_potential_non_fossil': {'description': 'Abiotic depletion potential for non-fossil resources',
@@ -107,8 +112,8 @@ field_description['lca_fields']['impact_fields'] = {'abiotic_depletion_potential
   'unit': 'kg CO2-equivalent'},
  'water_deprivation_potential': {'description': 'Water (user) deprivation potential',
   'short_name': 'WDP',
-  'unit': 'm3 world-equivalent'}}
-
+  'unit': 'm3 world-equivalent'}
+}
 
 field_description['material_facts'] = {
     'total_co2e_kg_mf': {
