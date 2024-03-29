@@ -622,7 +622,7 @@ class ProductStatistics(ProductData):
 
         return filtered_df
 
-    def filter_dataframe(self, field, filters=None, include_estimated_values=False, remove_outliers=True, method='IQR', sqrt_tranf=True):
+    def filter_dataframe_based_on_field(self, field, filters=None, include_estimated_values=False, remove_outliers=True, method='IQR', sqrt_tranf=True):
 
         if filters:
             df = self.filter_df_by_dict(self.dataframe, filters)
@@ -657,18 +657,13 @@ class ProductStatistics(ProductData):
         plt.legend(loc='upper right')
         plt.show()
 
-    def get_field_distribution(self, field, filters=None, include_estimated_values=False, remove_outliers=True, method='IQR', sqrt_tranf=True, return_df=False):
-        df = self.filter_dataframe(field, filters, include_estimated_values, remove_outliers, method, sqrt_tranf)
+    def get_field_distribution(self, field, filters=None, include_estimated_values=False, remove_outliers=True, method='IQR', sqrt_tranf=True):
+        df = self.filter_dataframe_based_on_field(field, filters, include_estimated_values, remove_outliers, method, sqrt_tranf)
 
         self.plot_histogram(df, field)
 
-        if return_df:
-            return df
-
-    def get_field_distribution_boxplot(self, field, group_by_field, filters=None, include_estimated_values=False, remove_outliers=True, method='IQR', sqrt_tranf=True, return_df=False):
-
-        df = self.filter_dataframe(field, filters, include_estimated_values, remove_outliers, method, sqrt_tranf)
-
+    def plot_distribution_boxplot(self, df, field, group_by_field):
+        # Ensure the group_by_field is in the DataFrame
         if group_by_field not in df.columns:
             raise ValueError(f"{group_by_field} column is not available in the DataFrame.")
 
@@ -690,5 +685,9 @@ class ProductStatistics(ProductData):
         plt.title(f'Distribution of {field} by {group_by_field}', fontsize=15)
         plt.show()
 
-        if return_df:
-            return df.reset_index(drop=True)
+    def get_field_distribution_boxplot(self, field, group_by_field, filters=None, include_estimated_values=False, remove_outliers=True, method='IQR', sqrt_tranf=True):
+        df = self.filter_dataframe_based_on_field(field, filters, include_estimated_values, remove_outliers, method, sqrt_tranf)
+
+        # After preparing and filtering the DataFrame, plot it
+        self.plot_distribution_boxplot(df, field, group_by_field)
+
