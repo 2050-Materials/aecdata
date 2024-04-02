@@ -3,8 +3,16 @@
   <component name="NewModuleRootManager">
     <content url="file://$MODULE_DIR$">
       <excludeFolder url="file://$MODULE_DIR$/venv" />
+      <excludeFolder url="file://$MODULE_DIR$/aecdata_venv/lib/python3.9/site-packages/jedi/third_party/typeshed/stdlib/3/venv" />
+      <excludeFolder url="file://$MODULE_DIR$/aecdata_venv/lib/python3.9/site-packages/pip/_internal/operations/build" />
+      <excludeFolder url="file://$MODULE_DIR$/usage/.ipynb_checkpoints" />
+      <excludeFolder url="file://$MODULE_DIR$/aecdata.egg-info" />
+      <excludeFolder url="file://$MODULE_DIR$/build" />
     </content>
     <orderEntry type="jdk" jdkName="Python 3.10" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
+  </component>
+  <component name="PyDocumentationSettings">
+    <option name="renderExternalDocumentation" value="true" />
   </component>
 </module>

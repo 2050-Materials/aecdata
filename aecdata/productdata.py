@@ -94,10 +94,12 @@ class ProductData:
         sorted_material_facts_cols = sorted(material_facts_cols)
 
         # Combine the columns back together, with 'material_facts' columns at the end
-        ordered_columns = ['unique_product_uuid_v2'] + [col for col in other_cols if col!='unique_product_uuid_v2'] + sorted_material_facts_cols
-
-        # Re-index the dataframe with the ordered columns
-        return df[ordered_columns]
+        if 'unique_product_uuid_v2' in df.columns:
+            ordered_columns = ['unique_product_uuid_v2'] + [col for col in other_cols if col!='unique_product_uuid_v2'] + sorted_material_facts_cols
+            # Re-index the dataframe with the ordered columns
+            return df[ordered_columns]
+        else:
+            return df
 
     def to_csv(self, file_path):
         """

@@ -11,8 +11,8 @@ Since this repository is private, you'll need to install the library locally. To
 First, clone the repository to your local machine. You'll need access to the repository to do this. If you haven't configured SSH keys for GitHub, you might be prompted to enter your username and password.
 
 ```
-git clone https://github.com/2050-Materials/materials_2050_api_client.git
-cd materials_2050_api_client
+git clone https://github.com/2050-Materials/aecdata.git
+cd aecdata
 ```
 
 ### Install library
@@ -38,13 +38,13 @@ The `Authenticator` class is designed to handle the authentication process for a
 -   `get_api_and_refresh_token(self)`: Retrieves both the API token and a refresh token. This is useful for long-running applications that may need to refresh the API token.
 -   `refresh_api_token(self)`: Refreshes the API token using the refresh token. This method should be used when the API token has expired and a new one is needed without re-authenticating using the developer token.
 
-## `API_Client` Class (`client.py`)
+## `User` Class (`client.py`)
 
-The `API_Client` class provides methods to interact with the API, utilizing the `Authenticator` for handling authentication.
+The `User` class provides methods to interact with the API, utilizing the `Authenticator` for handling authentication.
 
 ### Initialization
 
--   `__init__(self, developer_token, base_api_url = "https://app.2050-materials.com/")`: Creates an `API_Client` instance.
+-   `__init__(self, developer_token, base_api_url = "https://app.2050-materials.com/")`: Creates an `User` instance.
     -   `developer_token`: The developer token provided for API access.
     -   `base_api_url`: The base URL for the API endpoints. Defaults to the 2050-materials API.
 
@@ -64,7 +64,7 @@ The `API_Client` class provides methods to interact with the API, utilizing the 
 
 ```
 # Initialize the API client with your developer token
-client = API_Client(developer_token="your_developer_token_here")
+client = User(developer_token="your_developer_token_here")
 
 # Refresh the API token
 client.refresh_api_token()

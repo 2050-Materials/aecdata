@@ -3,7 +3,7 @@ import requests
 from .auth import Authenticator
 from .utils import *
 
-class API_Client:
+class User:
     def __init__(self, developer_token, base_api_url = "https://app.2050-materials.com/"):
         self.base_api_url = base_api_url
         self.authenticator = Authenticator(developer_token, base_api_url)
@@ -12,11 +12,11 @@ class API_Client:
     def refresh_api_token(self):
         """
         Refreshes the API token using the Authenticator's refresh_api_token method.
-        Also updates the API_Client's api_token with the new token.
+        Also updates the User's api_token with the new token.
         """
         try:
             self.authenticator.refresh_api_token()  # This updates the authenticator's api_token
-            self.api_token = self.authenticator.api_token  # Update the API_Client's api_token
+            self.api_token = self.authenticator.api_token  # Update the User's api_token
             print("API Token refreshed successfully.")
         except Exception as e:
             print(f"Error refreshing API token: {e}")
@@ -105,9 +105,11 @@ class API_Client:
 
         return filter_mappings
 
-    def get_products_page(self, page=1, **filters):
+    def get_products_page(self, page=1, openapi=False, **filters):
 
         base_url = f'{self.base_api_url}developer/api/get_products'  # Use 'get_products' endpoint if needed
+        if openapi:
+            base_url = f'{self.base_api_url}developer/api/get_products_open_api'
 
         # Prepare query components based on filters
         query_components = []
@@ -135,12 +137,12 @@ class API_Client:
         except requests.RequestException as e:
             raise Exception(f"Failed call to get_products: {e}")
 
-    def get_products(self, **filters):
+    def get_products(self, openapi=False, **filters):
         items_per_page = 200
         all_products = []  # This will store all products across pages
         page = 1  # Start from the first page
 
-        response = self.get_products_page(page, **filters)
+        response = self.get_products_page(page, openapi=openapi, **filters)
 
         total_products = response['TotalProducts']
         # integer division trick to get one more page if there is a remainder
@@ -160,7 +162,7 @@ class API_Client:
             if not response['next']:
                 break  # If no response, exit the loop
             else:
-                response = self.get_products_page(page, **filters)
+                response = self.get_products_page(page, openapi=openapi, **filters)
 
         return all_products
 
