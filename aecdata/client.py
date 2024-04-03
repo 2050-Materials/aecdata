@@ -117,7 +117,7 @@ class User:
         return open_filters
 
     def get_filters_mapping(self):
-        filters = self.get_filters()  # Retrieve the filters
+        filters = self.filters  # Retrieve the filters
         filter_mappings = {}  # Initialize the dictionary to hold all mappings
 
         # Iterate over each filter category in the filters
