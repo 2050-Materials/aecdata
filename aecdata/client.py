@@ -8,6 +8,20 @@ class User:
         self.base_api_url = base_api_url
         self.authenticator = Authenticator(developer_token, base_api_url)
         self.api_token, self.refresh_token = self.authenticator.get_api_and_refresh_token()
+        self._filters = None
+        self._field_description = None
+
+    @property
+    def filters(self):
+        if self._filters is None:
+            self._filters = self.get_filters()
+        return self._filters
+
+    @property
+    def field_description(self):
+        if self._field_description is None:
+            self._field_description = self.get_field_description()
+        return self._field_description
 
     def refresh_api_token(self):
         """
@@ -22,30 +36,35 @@ class User:
             print(f"Error refreshing API token: {e}")
 
     def get_filters_template(self):
-        return filters_template
-
-    def get_all_field_description(self):
-        return field_description
+        field_description = self.field_description
+        return field_description.get('filters_template', None)
 
     def get_input_lca_fields_description(self):
-        return field_description['lca_fields']['input_fields']
+        field_description = self.field_description
+        return field_description.get('lca_fields', {}).get('input_fields', None)
 
     def get_output_lca_fields_description(self):
-        return field_description['lca_fields']['output_fields']
+        field_description = self.field_description
+        return field_description.get('lca_fields', {}).get('output_fields', None)
 
     def get_impact_lca_fields_description(self):
-        return field_description['lca_fields']['impact_fields']
+        field_description = self.field_description
+        return field_description.get('lca_fields', {}).get('impact_fields', None)
 
     def get_material_facts_fields_description(self):
-        return field_description['material_facts']
+        field_description = self.field_description
+        return field_description.get('material_facts', None)
 
     def get_physical_properties_fields_description(self):
+        field_description = self.field_description
         return field_description['physical_properties']
 
     def get_technical_parameters_fields_description(self):
+        field_description = self.field_description
         return field_description['technical_parameters']
 
     def get_product_fields_description(self):
+        field_description = self.field_description
         return field_description['product_fields']
 
     def get_unit_categories(self):
@@ -69,7 +88,6 @@ class User:
             'Authorization': f'Bearer {self.api_token}',
             'Content-Type': 'application/json',
         }
-
         try:
             response = requests.get(get_filters_url, headers=headers)
             response.raise_for_status()
@@ -78,8 +96,22 @@ class User:
         except requests.RequestException as e:
             raise Exception(f"Failed call to get_filters API: {e}")
 
+    def get_field_description(self):
+        get_field_description_url = f'{self.base_api_url}developer/api/get_field_description'
+        headers = {
+            'Authorization': f'Bearer {self.api_token}',
+            'Content-Type': 'application/json',
+        }
+        try:
+            response = requests.get(get_field_description_url, headers=headers)
+            response.raise_for_status()
+            field_description = response.json()
+            return field_description
+        except requests.RequestException as e:
+            raise Exception(f"Failed call to get_field_description API: {e}")
+
     def get_open_filters(self):
-        filters = self.get_filters()  # Utilize the get_filters method to fetch all filters
+        filters = self.filters
         open_filters = {i: filters[i] for i in filters.keys() if
                         i in ['product_type', 'material_types', 'company', 'manufacturing_country', 'continent']}
         return open_filters
@@ -135,7 +167,11 @@ class User:
             products = response.json()
             return products
         except requests.RequestException as e:
-            raise Exception(f"Failed call to get_products: {e}")
+            if e.response.status_code == 401:  # Unauthorized
+                raise Exception(
+                    "Unauthorized access. Consider using the free but limited version by including the parameter openapi=True in your request.")
+            else:
+                raise Exception(f"Failed call to get_products: {e}")
 
     def get_products(self, openapi=False, **filters):
         items_per_page = 200
@@ -166,34 +202,34 @@ class User:
 
         return all_products
 
-    def get_products_open_api(self, page=1, **filters):
-
-        base_url = f'{self.base_api_url}developer/api/get_products_open_api'
-
-        # Prepare query components based on filters
-        query_components = []
-        for key, value in filters.items():
-            if key == 'product_url' and isinstance(value, list):  # Special handling for 'product_url' as a list
-                query_components.extend([f'{key}={url}' for url in value])
-            else:
-                query_components.append(f'{key}={value}')
-
-        # Construct the final URL with all filters applied
-        filter_query = '&'.join(query_components)
-        url = f"{base_url}?page={page}&{filter_query}" if filters else f"{base_url}?page={page}"
-
-        headers = {
-            'Authorization': f'Bearer {self.api_token}',
-            'Content-Type': 'application/json',
-        }
-
-        try:
-            response = requests.get(url, headers=headers)
-            response.raise_for_status()
-            products = response.json()
-            return products
-        except requests.RequestException as e:
-            raise Exception(f"Failed call to get_products_open_api: {e}")
+    # def get_products_open_api(self, page=1, **filters):
+    #
+    #     base_url = f'{self.base_api_url}developer/api/get_products_open_api'
+    #
+    #     # Prepare query components based on filters
+    #     query_components = []
+    #     for key, value in filters.items():
+    #         if key == 'product_url' and isinstance(value, list):  # Special handling for 'product_url' as a list
+    #             query_components.extend([f'{key}={url}' for url in value])
+    #         else:
+    #             query_components.append(f'{key}={value}')
+    #
+    #     # Construct the final URL with all filters applied
+    #     filter_query = '&'.join(query_components)
+    #     url = f"{base_url}?page={page}&{filter_query}" if filters else f"{base_url}?page={page}"
+    #
+    #     headers = {
+    #         'Authorization': f'Bearer {self.api_token}',
+    #         'Content-Type': 'application/json',
+    #     }
+    #
+    #     try:
+    #         response = requests.get(url, headers=headers)
+    #         response.raise_for_status()
+    #         products = response.json()
+    #         return products
+    #     except requests.RequestException as e:
+    #         raise Exception(f"Failed call to get_products_open_api: {e}")
 
 
 

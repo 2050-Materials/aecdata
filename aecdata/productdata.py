@@ -28,8 +28,27 @@ class ProductData:
 
     @data.setter
     def data(self, value):
-        self._data = value
-        self._dataframe = self.to_dataframe(value).replace({np.nan: None})
+        def add_scaling_factor(product):
+            # Check if 'material_facts' is a key in the product dictionary
+            if 'material_facts' in product:
+                # Check if 'scaling_factor' is not a key in the 'material_facts' dictionary
+                if 'scaling_factor' not in product['material_facts']:
+                    declared_unit = product['material_facts'].get('declared_unit', None)
+                    if declared_unit:
+                        product['material_facts']['scaling_factors'] = {
+                            declared_unit: {'value': 1, 'estimated': False}
+                        }
+            # In case 'material_facts' key is missing, do nothing (no error)
+            return product
+        if 'scaling_factor' not in value:
+            products = []
+            for product in value:
+                products.append(add_scaling_factor(product))
+        else:
+            products = value.copy()
+
+        self._data = products
+        self._dataframe = self.to_dataframe(products).replace({np.nan: None})
 
     @property
     def dataframe(self):
@@ -198,6 +217,13 @@ class ProductData:
                 # Scale the DataFrame to the specified unit
                 scaled_row = self.convert_df_to_unit(product_row, unit, amount)
 
+                # scaled_row_squeezed = scaled_row.squeeze()
+                # scaling_factor_name = f'material_facts.scaling_factors.{unit}.value'
+                #
+                # # Now scaled_row_squeezed is a Series, and you can check and access values directly
+                # if scaling_factor_name not in scaled_row_squeezed or not scaled_row_squeezed[scaling_factor_name]:
+                #     print(f"Unit {unit} for product {scaled_row_squeezed['unique_product_uuid_v2']} not available")
+
                 # If the DataFrame was successfully scaled
                 if scaled_row is not None:
                     # # Scale the row by the specified amount
@@ -212,6 +238,7 @@ class ProductData:
 
         return scaled_products_df.reset_index(drop=True)
 
+
     def plot_product_contributions(self, products_info, field_name):
         # Use the existing method to scale the DataFrame
         scaled_df = self.scale_products_by_unit_and_amount(products_info)
@@ -219,16 +246,21 @@ class ProductData:
         # Ensure the DataFrame is ready for operations
         scaled_df = scaled_df.infer_objects()
 
-        # Check if the specified field is available
-        if field_name not in scaled_df.columns:
-            print(f"Field '{field_name}' not found in scaled DataFrame.")
+        # Check if the specified field and required columns are available
+        required_columns = ['name', 'unique_product_uuid_v2', field_name]
+        missing_columns = [col for col in required_columns if col not in scaled_df.columns]
+        if missing_columns:
+            print(f"Missing required fields: {', '.join(missing_columns)} in scaled DataFrame.")
             return None
 
-        # Aggregate the data by summing the specified field, grouped by the 'name' attribute
-        contributions = scaled_df.groupby('name')[field_name].sum()
+        scaled_df = scaled_df.copy()
+        # Create a new column combining 'name' and 'unique_product_uuid_v2' with a newline character
+        scaled_df['label'] = scaled_df['name'] + '\n(' + scaled_df['unique_product_uuid_v2'] + ')'
 
-        # Before plotting, ensure no silent downcasting occurs in future operations
-        pd.set_option('future.no_silent_downcasting', True)
+        scaled_df.replace([np.inf, -np.inf], np.nan, inplace=True)
+
+        # Aggregate the data by summing the specified field, grouped by the new 'label' attribute
+        contributions = scaled_df.groupby('label')[field_name].sum()
 
         # Plotting
         plt.figure(figsize=(10, 8))
@@ -380,7 +412,7 @@ class ProductData:
             epdx_product['source'] = '2050 Materials Product Database'
 
             # life expectancy
-            epdx_product['reference_service_life'] = row['life_expectancy']
+            epdx_product['reference_service_life'] = row.get('life_expectancy', None)
 
             # Certificate Subtype
             certificate_subtype = row.get('material_facts.certificate_subtype', '')
@@ -391,7 +423,7 @@ class ProductData:
             epdx_product['standard'] = determine_standard(compliances)
 
             # location assign country
-            epdx_product['location'] = row['country']
+            epdx_product['location'] = row.get('country', None)
 
             # Generate conversions list
             conversions = generate_conversions(row.to_dict())
@@ -438,6 +470,9 @@ class ProductStatistics(ProductData):
             df['estimated'] = df[f'material_facts.scaling_factors.{unit}.estimated']
         elif unit == 'declared_unit':
             df['estimated'] = False
+
+        # Drop rows where the 'estimated' column has None values
+        df.dropna(subset=['estimated'], inplace=True)
 
         self.dataframe = df
         self.data = self.df_to_list(df)
