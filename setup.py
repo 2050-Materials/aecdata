@@ -4,6 +4,7 @@ setup(
     name="aecdata",
     version="0.1",
     author="2050 Materials",
+    license="Apache License 2.0",
     author_email="nicodemos@2050-materials.com",
     description="aecdata is a Python library designed to simplify access to the 2050-materials API",
     long_description=open('README.md').read(),
@@ -16,10 +17,10 @@ setup(
         "Operating System :: OS Independent",
     ],
     install_requires=[
-        "requests>=2.31.0",
-        "numpy>=1.26.4",
-        "pandas>=2.2.1",
-        "matplotlib>=3.8.3",
-        "pyarrow>=3.0.0",
+        "requests",
+        "numpy",
+        "pandas",
+        "matplotlib",
+        "pyarrow",
     ]
 )
