@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="aecdata",
-    version="0.1.3",
+    version="0.1.1",
     author="2050 Materials",
     license="Apache License 2.0",
     author_email="nicodemos@2050-materials.com",
