@@ -1,6 +1,6 @@
 # 2050 Materials API Client
 
-The 2050 Materials API Client is a sophisticated Python library designed to facilitate seamless interaction with the 2050-materials platform API. By abstracting the complexities of authentication and data retrieval, this library empowers developers to focus on analyzing and utilizing environmental data about construction materials effectively.
+The 2050 Materials API Client is a Python library designed to facilitate seamless interaction with the 2050-materials platform API. By abstracting the complexities of authentication and data retrieval, this library empowers developers to focus on analyzing and utilizing environmental data about construction materials effectively.
 
 ## Key Features
 
@@ -21,9 +21,6 @@ The library is structured to guide the user through a seamless process from auth
    
 4. **Statistical Analysis and Visualization**: For advanced data analysis, the `ProductStatistics` class extends `ProductData` to provide statistical insights. It enables outlier removal, distribution analysis, and more, coupled with visualization capabilities to help interpret the data effectively.
 
-This documentation aims to provide a comprehensive guide on how to utilize the 2050 Materials API Client, from setting up and fetching data to performing in-depth data analysis and visualization.
-
-
 ## Installation
 
 The library is currently hosted publicly on GitHub. To install the library locally, follow these steps:
@@ -40,9 +37,9 @@ pip install .
 
 ## Usage Documentation
 
-## `Authenticator` Class (`auth.py`)
+## `Authenticator` Class
 
-The `Authenticator` class is designed to handle the authentication process for accessing the API. It manages both API tokens and refresh tokens to ensure continued access.
+The `Authenticator` class is designed to handle the authentication process for accessing the API. It is used internally to manage both API tokens and to ensure continued access.
 
 ### Initialization
 
@@ -170,6 +167,32 @@ The `ProductData` class is designed to manage and manipulate the data fetched fr
 
 This class is a powerful tool for developers working with environmental data about construction materials, providing essential functionalities for data manipulation, conversion, and visualization.
 
+
+## Usage Example
+
+```
+# Create ProductData object from API data
+product_data = ProductData(filtered_products)
+
+# Access the dataframe
+df = product_data.dataframe
+
+# Create a custom project with specified products, units and amounts
+products_info = {
+    '6aa6d32c-f8cf-11ed-9c01-0242ac120004' : {'amount': 0.2}, 
+    'c0800dc0-f8cc-11ed-9c01-0242ac120004' : {'amount': 0.30}, 
+    '6ab16fb2-f8cf-11ed-9c01-0242ac120004' : {'unit':'m2'},
+    '6aab7152-f8cf-11ed-9c01-0242ac120004' : {'unit':'m2', 'amount': 1},
+}
+scale_df = product_data.scale_products_by_unit_and_amount(products_info)
+
+# Vizualise the contributions from each product for a specific LCA field
+product_data.plot_product_contributions(products_info, 'material_facts.manufacturing')
+
+# Convert to EPDx format
+epdx_products = product_data.to_epdx()
+```
+
 ## ProductStatistics Class
 
 The `ProductStatistics` class extends the `ProductData` class, offering advanced statistical analysis capabilities for the product data obtained from the 2050-materials API. It enables users to perform detailed statistical analyses, including filtering based on various criteria, removing outliers, and plotting distributions.
@@ -207,5 +230,31 @@ Inherits all attributes from the `ProductData` class.
 - `plot_distribution_boxplot(self, df, field, group_by_field)`: Creates a boxplot for the specified field, grouped by another field, highlighting the variance and distribution within the data.
 - `get_field_distribution_boxplot(self, field, group_by_field, filters=None, include_estimated_values=False, remove_outliers=True, method='IQR', sqrt_tranf=True)`: Filters the DataFrame and generates a boxplot for the specified field, providing a visual representation of statistical distributions.
 
+## Usage Example
 
+```
+# Create ProductStatistics (extension of ProductData)
+stats_obj = ProductStatistics(product_data.dataframe, unit='m2')
+
+# Choose fields to group by
+group_by = [
+    'country',
+    'manufacturing_continent',
+]
+
+# Get all available fields
+all_available_fields  = stats_obj.get_available_fields()
+
+# Calculate statistics dataframe
+stat_df = stats_obj.get_statistics(group_by=group_by, fields=all_available_fields, statistical_metrics=['count', 'mean', 'median'], include_estimated_values=False, remove_outliers=True, method='IQR', sqrt_tranf=True, min_count=3)
+
+# Apply further filters and get field distribution
+filters = {
+    'material_type':'Ceramic',
+}
+stats_obj.get_field_distribution(field='material_facts.manufacturing', filters=filters, include_estimated_values=True, remove_outliers=False, method='IQR', sqrt_tranf=True)
+
+# Get field distribution boxplot for all product types
+stats_obj.get_field_distribution_boxplot(field='material_facts.manufacturing', group_by_field='product_type', filters=None, include_estimated_values=True, remove_outliers=True, method='IQR', sqrt_tranf=True)
+```
 
