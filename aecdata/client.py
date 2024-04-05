@@ -1,7 +1,10 @@
 import requests
-
+import warnings
 from .auth import Authenticator
 from .utils import *
+
+# Ensure all instances of this specific warning are always shown
+warnings.simplefilter('always', UserWarning)
 
 class User:
     def __init__(self, developer_token, base_api_url = "https://app.2050-materials.com/"):
@@ -97,18 +100,7 @@ class User:
             raise Exception(f"Failed call to get_filters API: {e}")
 
     def get_field_description(self):
-        get_field_description_url = f'{self.base_api_url}developer/api/get_field_description'
-        headers = {
-            'Authorization': f'Bearer {self.api_token}',
-            'Content-Type': 'application/json',
-        }
-        try:
-            response = requests.get(get_field_description_url, headers=headers)
-            response.raise_for_status()
-            field_description = response.json()
-            return field_description
-        except requests.RequestException as e:
-            raise Exception(f"Failed call to get_field_description API: {e}")
+        return field_description
 
     def get_open_filters(self):
         filters = self.filters
@@ -177,6 +169,12 @@ class User:
         items_per_page = 200
         all_products = []  # This will store all products across pages
         page = 1  # Start from the first page
+
+        if not filters:
+            warnings.warn(
+                "You are retrieving all products. No filters were applied. This will take a while..",
+                UserWarning  # This is the default, but specifying it makes the intention clear
+            )
 
         response = self.get_products_page(page, openapi=openapi, **filters)
 

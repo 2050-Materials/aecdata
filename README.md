@@ -97,10 +97,7 @@ The `User` class provides a high-level interface for interacting with the 2050-m
 - `get_physical_properties_fields(self)`: Returns a list of fields detailing the physical properties of materials.
 - `get_filters_mapping(self)`: Creates and returns a mapping of filter options to simplify query construction.
 - `get_products_page(self, page=1, openapi=False, **filters)`: Fetches a specific page of product data, optionally applying filters.
-- `get_products(self, openapi=False, **filters)`: Fetches all products, optionally applying filters, and handles pagination automatically.
-
-
-This class simplifies the process of interacting with the 2050-materials API, abstracting away the complexities of authentication, token management, and data retrieval.
+- `get_products(self, openapi=False, **filters)`: Fetches all products, optionally applying filters, and handles pagination automatically. Use `openapi=False` to use the free Open API.
 
 ## Usage Example
 
@@ -164,8 +161,6 @@ The `ProductData` class is designed to manage and manipulate the data fetched fr
 #### Data Transformation for EPDx Format
 
 - `to_epdx(self)`: Converts the data into the EPDx format, suitable for environmental product declarations.
-
-This class is a powerful tool for developers working with environmental data about construction materials, providing essential functionalities for data manipulation, conversion, and visualization.
 
 
 ## Usage Example
