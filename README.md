@@ -53,7 +53,7 @@ The `Authenticator` class is designed to handle the authentication process for a
 -   `get_api_and_refresh_token(self)`: Retrieves both the API token and a refresh token. This is useful for long-running applications that may need to refresh the API token.
 -   `refresh_api_token(self)`: Refreshes the API token using the refresh token. This method should be used when the API token has expired and a new one is needed without re-authenticating using the developer token.
 
-## User Class
+## `User` Class
 
 The `User` class provides a high-level interface for interacting with the 2050-materials API, handling authentication, and performing API requests to fetch and manage data related to construction materials.
 
@@ -124,7 +124,7 @@ filters = {
 filtered_products = user.get_products(openapi=False, **filters) # Set openapi=True for the free version
 ```
 
-## ProductData Class
+## `ProductData` Class
 
 The `ProductData` class is designed to manage and manipulate the data fetched from the 2050-materials API. It offers functionalities for converting data between different formats, scaling product data based on units and amounts, and generating plots for product contributions.
 
@@ -193,7 +193,7 @@ product_data.plot_product_contributions(products_info, 'material_facts.manufactu
 epdx_products = product_data.to_epdx()
 ```
 
-## ProductStatistics Class
+## `ProductStatistics` Class
 
 The `ProductStatistics` class extends the `ProductData` class, offering advanced statistical analysis capabilities for the product data obtained from the 2050-materials API. It enables users to perform detailed statistical analyses, including filtering based on various criteria, removing outliers, and plotting distributions.
 
