@@ -437,6 +437,21 @@ class ProductData:
             epdx_products_list.append(epdx_product)
 
         return epdx_products_list
+
+    def filter_df_by_dict(self, df, filter_dict):
+        # Start with the full DataFrame
+        filtered_df = df
+        # Apply each filter
+        for key, value in filter_dict.items():
+            # Check if the column contains lists
+            if df[key].apply(lambda x: isinstance(x, list)).any():
+                # Use apply() to filter rows where the list contains the value
+                filtered_df = filtered_df[filtered_df[key].apply(lambda x: any(value in str(item) for item in x) if x is not None else False)]
+            else:
+                # If the column does not contain lists, filter normally
+                filtered_df = filtered_df[filtered_df[key] == value]
+        return filtered_df
+
 class ProductStatistics(ProductData):
     def __init__(self, data, unit='declared_unit'):
         # Check if the input is a ProductData instance
@@ -548,19 +563,6 @@ class ProductStatistics(ProductData):
             available_fields += field_list
         return available_fields
 
-    def filter_df_by_dict(self, df, filter_dict):
-        # Start with the full DataFrame
-        filtered_df = df
-        # Apply each filter
-        for key, value in filter_dict.items():
-            # Check if the column contains lists
-            if df[key].apply(lambda x: isinstance(x, list)).any():
-                # Use apply() to filter rows where the list contains the value
-                filtered_df = filtered_df[filtered_df[key].apply(lambda x: value in x)]
-            else:
-                # If the column does not contain lists, filter normally
-                filtered_df = filtered_df[filtered_df[key] == value]
-        return filtered_df
 
     def get_group_by_combinations(self, df, group_by, min_count):
         # Filter out any None values upfront
