@@ -426,7 +426,13 @@ field_description['technical_parameters'] = {
     },
     "compression_strength": {"description": "Compression Strength"},
     "impact_strength": {"description": "Impact Strength"},
-    "thermal_conductivity": {"description": "Thermal Conductivity"},
+    "thermal_conductivity": {
+        "description": "Thermal Conductivity",
+        "unit": "W/mK"
+    },
+    "thermal_conductivity_estimated": {
+        "description": "Thermal conductivity estimated?",
+    },
     "texture": {"description": "Texture"},
     "elasticity_plasticity": {"description": "Elasticity Plasticity"},
     "abrasion_resistance": {"description": "Abrasion Resistance"},
