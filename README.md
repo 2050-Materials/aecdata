@@ -21,18 +21,19 @@ The library is structured to guide the user through a seamless process from auth
    
 4. **Statistical Analysis and Visualization**: For advanced data analysis, the `ProductStatistics` class extends `ProductData` to provide statistical insights. It enables outlier removal, distribution analysis, and more, coupled with visualization capabilities to help interpret the data effectively.
 
+
 ## Installation
 
-The library is currently hosted publicly on GitHub. To install the library locally, follow these steps:
+The `aecdata` library can be installed directly from PyPI to ensure you have the latest version. Use the following pip command:
 
-### Clone the Repository
+```
+pip install aecdata
+```
 
-First, clone the repository to your local machine. You'll need access to the repository to do this. If you haven't configured SSH keys for GitHub, you might be prompted to enter your username and password.
+For source code, issues, and contributions, the project is hosted on GitHub at: 
 
 ```
 git clone https://github.com/2050-Materials/aecdata.git
-cd aecdata
-pip install .
 ```
 
 ## Usage Documentation

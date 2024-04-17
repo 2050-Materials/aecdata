@@ -2,11 +2,11 @@ from setuptools import setup, find_packages
 
 setup(
     name="aecdata",
-    version="0.1.4",
+    version="0.0.1",
     author="2050 Materials",
     license="Apache License 2.0",
     author_email="nicodemos@2050-materials.com",
-    description="aecdata is a Python library designed to simplify access to the 2050-materials API",
+    description="A Python library designed to simplify access to the 2050-materials API",
     long_description=open('README.md').read(),
     long_description_content_type="text/markdown",
     url="https://github.com/2050-Materials/aecdata",
