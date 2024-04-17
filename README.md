@@ -1,6 +1,6 @@
-# 2050 Materials API Client
+# `aecdata`
 
-The 2050 Materials API Client is a Python library designed to facilitate seamless interaction with the 2050-materials platform API. By abstracting the complexities of authentication and data retrieval, this library empowers developers to focus on analyzing and utilizing environmental data about construction materials effectively.
+`aecdata` is a Python library designed to facilitate seamless interaction with the 2050-materials platform API. By abstracting the complexities of authentication and data retrieval, this library empowers developers to focus on analyzing and utilizing environmental data about construction materials effectively.
 
 ## Key Features
 
