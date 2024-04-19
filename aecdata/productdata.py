@@ -443,14 +443,26 @@ class ProductData:
         filtered_df = df
         # Apply each filter
         for key, value in filter_dict.items():
-            # Check if the column contains lists
-            if df[key].apply(lambda x: isinstance(x, list)).any():
-                # Use apply() to filter rows where the list contains the value
-                filtered_df = filtered_df[filtered_df[key].apply(lambda x: any(value in str(item) for item in x) if x is not None else False)]
+            if isinstance(value, list):
+                # If value is a list, filter using 'isin' for direct matches
+                # or check list columns for any item in the list values
+                if df[key].apply(lambda x: isinstance(x, list)).any():
+                    # Check if any item from the list in 'value' is in any list in the DataFrame
+                    filtered_df = filtered_df[
+                        filtered_df[key].apply(lambda x: any(item in x for item in value) if x is not None else False)]
+                else:
+                    # For normal columns, filter where the column's value is in 'value' list
+                    filtered_df = filtered_df[filtered_df[key].isin(value)]
             else:
-                # If the column does not contain lists, filter normally
-                filtered_df = filtered_df[filtered_df[key] == value]
+                # Check if the column contains lists
+                if df[key].apply(lambda x: isinstance(x, list)).any():
+                    # Use apply() to filter rows where the list contains the value
+                    filtered_df = filtered_df[filtered_df[key].apply(lambda x: value in x if x is not None else False)]
+                else:
+                    # If the column does not contain lists, filter normally
+                    filtered_df = filtered_df[filtered_df[key] == value]
         return filtered_df
+
 
 class ProductStatistics(ProductData):
     def __init__(self, data, unit='declared_unit'):
@@ -894,7 +906,6 @@ class ProductStatistics(ProductData):
 
     def get_field_distribution_boxplot(self, field, group_by_field, filters=None, include_estimated_values=False, remove_outliers=True, method='IQR', sqrt_tranf=True):
         df = self.filter_dataframe_based_on_field(field, filters, include_estimated_values, remove_outliers, method, sqrt_tranf)
-
         # After preparing and filtering the DataFrame, plot it
         self.plot_distribution_boxplot(df, field, group_by_field)
 
