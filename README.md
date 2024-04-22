@@ -1,6 +1,6 @@
 # AECData
 
-AECData is a Python library designed to facilitate seamless interaction with the 2050-materials platform API. By abstracting the complexities of authentication and data retrieval, this library empowers developers to focus on analyzing and utilizing environmental data about construction materials effectively.
+AECData is a Python library designed to facilitate seamless interaction with the 2050-materials platform API (see documentation [here](https://docs.2050-materials.com/getting-started-with-2050-materials/using-the-api)). By abstracting the complexities of authentication and data retrieval, this library empowers developers to focus on analyzing and utilizing environmental data about construction materials effectively.
 
 ## Key Features
 
