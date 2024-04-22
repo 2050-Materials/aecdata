@@ -13,7 +13,7 @@ AECData is a Python library designed to facilitate seamless interaction with the
 
 The library is structured to guide the user through a seamless process from authentication to data analysis:
 
-1. **Initialization**: Start by creating a `User` instance with your developer token. This instance will manage your authentication and serve as your gateway to fetching data.
+1. **Initialization**: Start by creating a `User` instance with your developer token ([see how to get a token here](https://docs.2050-materials.com/getting-started-with-2050-materials/using-the-api#get-a-developer-token)). This instance will manage your authentication and serve as your gateway to fetching data.
    
 2. **Fetching Data**: Utilize the `User` class to retrieve data from the API. You can apply various filters to narrow down the data according to your needs.
    
