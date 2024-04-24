@@ -29,23 +29,19 @@ class ProductData:
     @data.setter
     def data(self, value):
         def add_scaling_factor(product):
-            # Check if 'material_facts' is a key in the product dictionary
+            # Ensure 'material_facts' exists and proceed if it does
             if 'material_facts' in product:
-                # Check if 'scaling_factor' is not a key in the 'material_facts' dictionary
-                if 'scaling_factor' not in product['material_facts']:
+                # Initialize 'material_facts' if not already present
+                if 'scaling_factors' not in product['material_facts']:
                     declared_unit = product['material_facts'].get('declared_unit', None)
                     if declared_unit:
                         product['material_facts']['scaling_factors'] = {
                             declared_unit: {'value': 1, 'estimated': False}
                         }
-            # In case 'material_facts' key is missing, do nothing (no error)
             return product
-        if 'scaling_factor' not in value:
-            products = []
-            for product in value:
-                products.append(add_scaling_factor(product))
-        else:
-            products = value.copy()
+
+        # Process each product to potentially add missing scaling factors
+        products = [add_scaling_factor(product) for product in value]
 
         self._data = products
         self._dataframe = self.to_dataframe(products).replace({np.nan: None})
@@ -852,7 +848,7 @@ class ProductStatistics(ProductData):
             df = df[df['estimated'] == False]
 
         if field not in self.get_available_fields():
-            raise ValueError(f"{field} is not available.")
+            return pd.DataFrame()
 
         df = df.dropna(subset=[field])
 
