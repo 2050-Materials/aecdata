@@ -1,13 +1,4 @@
-
-
-# lca_fields = ['net_fresh_water_use', 'non_renewable_primary_energy','non_renewable_primary_energy_raw_materials','non_renewable_secondary_fuels','renewable_primary_energy',
-#     'renewable_primary_energy_raw_materials','renewable_secondary_fuels','secondary_material_use','total_non_renewable_primary_energy','total_renewable_primary_energy','components_for_reuse',
-#     'exported_electrical_energy','exported_thermal_energy','hazardous_waste_disposed','materials_for_energy_recovery','materials_for_recycling','non_hazardous_waste_disposed',
-#     'radioactive_waste_disposed','abiotic_depletion_potential_fossil','abiotic_depletion_potential_non_fossil','acidification_potential','ozone_depletion_potential','eutrophication_potential',
-#     'formation_potential_of_tropospheric_ozone','global_warming_potential_fossil','global_warming_potential_biogenic','global_warming_potential_luluc','water_deprivation_potential'
-#               ]
-#
-# lca_modules = ['A1', 'A2', 'A3', 'A1A2A3', 'A4', 'A5', 'B1', 'B2', 'B3', 'B4', 'B5', 'B6', 'B7', 'C1', 'C2', 'C3', 'C4', 'D']
+production_base_url = "https://app.2050-materials.com/"
 
 unit_to_field_mapping = {
     ('kg', 'm3'): 'density',

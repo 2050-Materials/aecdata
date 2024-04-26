@@ -1,7 +1,8 @@
 import requests
+from .utils import *
 
 class Authenticator:
-    def __init__(self, developer_token, base_api_url):
+    def __init__(self, developer_token, base_api_url = production_base_url):
         self.base_api_url = base_api_url
         self.developer_token = developer_token
         self.api_token = None

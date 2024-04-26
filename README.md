@@ -44,9 +44,9 @@ The `Authenticator` class is designed to handle the authentication process for a
 
 ### Initialization
 
--   `__init__(self, developer_token, base_api_url)`: Initializes the `Authenticator` instance.
+-   `__init__(self, developer_token, base_api_url = 'https://app.2050-materials.com/')`: Initializes the `Authenticator` instance.
     -   `developer_token`: The developer token provided for API access.
-    -   `base_api_url`: The base URL for the API endpoints.
+    -   `base_api_url` (optional): The base URL for the API endpoints.
 
 ### Methods
 

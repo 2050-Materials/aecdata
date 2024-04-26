@@ -7,7 +7,7 @@ from .utils import *
 warnings.simplefilter('always', UserWarning)
 
 class User:
-    def __init__(self, developer_token, base_api_url = "https://app.2050-materials.com/"):
+    def __init__(self, developer_token, base_api_url = production_base_url):
         self.base_api_url = base_api_url
         self.authenticator = Authenticator(developer_token, base_api_url)
         self.api_token, self.refresh_token = self.authenticator.get_api_and_refresh_token()
