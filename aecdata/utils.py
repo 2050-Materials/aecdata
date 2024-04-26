@@ -149,10 +149,19 @@ lca_field_to_epdx = {
 field_description = {}
 
 field_description['filters_template']  = {
-    'sort_by': "Sort By (Available options are - carbon_sorting, latest, recycled_content, recyclable_content)",
+    'sort_by': "Sort By (Available options are - carbon_sorting, latest, recycled_content, recyclable_content, update & created)",
     'group_by': "Products are grouped by (Available options are - company_name, product_type, material, manufacturing_location, continent, price_range, building_applications, building_types, certification_types)",
+    'unique_product_uuid_v2': "Search a specific product with UUID (2050 Materials unique id) (e.g. unique_product_uuid_v2=ac22f2a4-f960-11ed-92ea-0242ac120004)",
+    'product_url': "Search a specific product with product url (e.g. product_url='https://app.2050-materials.com/product/details_designer/isolconfort-srl-eps-eco-espanso-k120/')",
+    "compliances": "compliances (e.g. compliances=EN 15804)",
+    "updated_after": "Products updated after a date (e.g. updated_after=2022-12-31)",
+    "updated_before": "Products updated before a date (e.g. updated_before=2022-12-31)",
+    "created_after": "Products created after a date (e.g. created_after=2022-12-31)",
+    "created_before": "Products created before a date (e.g. created_before=2022-12-31)",
+    "created_between": "Products created during date range (e.g. created_between=2022-12-31,2023-12-31)",
+    "updated_between": "Products updated during date range (e.g. updated_between=2022-12-31,2023-12-31)",
     'mf_unit': "Include dictionary with material facts in specified units. Accepts a single value or multiple values. Use 'all' to include all units. For example, to express material facts in square meters and square feet, use mf_unit='m2'&mf_unit='ft2'.",
-    'name': "Search with the name of the product",
+    'name': "Search with the name of the product (e.g. name='Mycelium Insulation Panel')",
     'product_type': "Product Type Ids (e.g. product_type=2 or [2,3])",
     'product_type_family': "Product Type Family Ids (e.g. product_type_family=3 or [2,3])",
     'material_types': "Material Types Ids (e.g. material_types=4 or [2,3])",
