@@ -20,7 +20,6 @@ setup(
         "requests",
         "numpy",
         "pandas",
-        "matplotlib",
         "pyarrow",
     ]
 )

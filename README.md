@@ -157,7 +157,7 @@ The `ProductData` class is designed to manage and manipulate the data fetched fr
 
 #### Plotting and Visualization
 
-- `plot_product_contributions(self, products_info, field_name)`: Generates a pie chart illustrating the contributions of each product to the specified field (e.g., CO2 emissions).
+- `get_product_contributions(self, products_info, field_name)`: Generates a pie chart illustrating the contributions of each product to the specified field (e.g., CO2 emissions).
 
 #### Data Transformation for EPDx Format
 
@@ -180,10 +180,21 @@ products_info = {
     '6ab16fb2-f8cf-11ed-9c01-0242ac120004' : {'unit':'m2'},
     '6aab7152-f8cf-11ed-9c01-0242ac120004' : {'unit':'m2', 'amount': 1},
 }
+
+import matplotlib.pyplot as plt
+
 scale_df = product_data.scale_products_by_unit_and_amount(products_info)
 
-# Vizualise the contributions from each product for a specific LCA field
-product_data.plot_product_contributions(products_info, 'material_facts.manufacturing')
+field_name =  'material_facts.manufacturing'
+contributions = product_data.get_product_contributions(products_info, 'material_facts.manufacturing')
+contributions
+
+# Plotting pie chart
+plt.figure(figsize=(10, 8))
+contributions.plot(kind='pie', autopct='%1.1f%%', startangle=90, counterclock=False, labels=contributions.index)
+plt.title(f'Contribution of Each Product by {field_name}')
+plt.ylabel('')  # Hide y-axis label for clarity
+plt.show()
 
 # Convert to EPDx format
 epdx_products = product_data.to_epdx()
@@ -220,10 +231,8 @@ Inherits all attributes from the `ProductData` class.
 - `filter_dataframe_based_on_field(self, field, filters=None, include_estimated_values=False, remove_outliers=True, method='IQR', sqrt_tranf=True)`: Filters the DataFrame based on specified criteria, including the treatment of estimated values and outliers.
 
 #### Plotting and Visualization
-
-- `plot_histogram(self, df, field)`: Generates a histogram for the specified field, visualizing the distribution of values.
-- `get_field_distribution(self, field, filters=None, include_estimated_values=False, remove_outliers=True, method='IQR', sqrt_tranf=True)`: Filters the DataFrame and plots the distribution of the specified field, offering insights into the data's structure.
-- `plot_distribution_boxplot(self, df, field, group_by_field)`: Creates a boxplot for the specified field, grouped by another field, highlighting the variance and distribution within the data.
+- `get_product_contributions(products_info, 'material_facts.manufacturing')`: Takes a dictionary with product ids as keys and values a dictionary with unit and amount and for an LCA field calculates the percentage contribution of carbon emissions.
+- `get_field_distribution(self, field, filters=None, include_estimated_values=False, remove_outliers=True, method='IQR', sqrt_tranf=True)`: Filters the DataFrame and returns the distribution of the specified field, offering insights into the data's structure.
 - `get_field_distribution_boxplot(self, field, group_by_field, filters=None, include_estimated_values=False, remove_outliers=True, method='IQR', sqrt_tranf=True)`: Filters the DataFrame and generates a boxplot for the specified field, providing a visual representation of statistical distributions.
 
 ## Usage Example

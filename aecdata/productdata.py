@@ -4,7 +4,6 @@ import json
 import warnings
 from itertools import product
 from datetime import datetime
-import matplotlib.pyplot as plt
 from .utils import *
 
 # Ensure all instances of this specific warning are always shown
@@ -235,7 +234,7 @@ class ProductData:
         return scaled_products_df.reset_index(drop=True)
 
 
-    def plot_product_contributions(self, products_info, field_name):
+    def get_product_contributions(self, products_info, field_name):
         # Use the existing method to scale the DataFrame
         scaled_df = self.scale_products_by_unit_and_amount(products_info)
 
@@ -258,12 +257,8 @@ class ProductData:
         # Aggregate the data by summing the specified field, grouped by the new 'label' attribute
         contributions = scaled_df.groupby('label')[field_name].sum()
 
-        # Plotting
-        plt.figure(figsize=(10, 8))
-        contributions.plot(kind='pie', autopct='%1.1f%%', startangle=90, counterclock=False, labels=contributions.index)
-        plt.title(f'Contribution of Each Product by {field_name}')
-        plt.ylabel('')  # Hide y-axis label for clarity
-        plt.show()
+        return contributions
+
 
     def to_epdx(self):
         def create_epdx_dict_from_row(row, modules_to_epdx, lca_field_to_epdx):
@@ -857,27 +852,12 @@ class ProductStatistics(ProductData):
 
         return df.reset_index(drop=True)
 
-    def plot_histogram(self, df, field):
-        bin_count = min(len(df[field].unique()), 50)  # Limit the number of bins to a maximum of 50
-        plt.figure(figsize=(10, 6))
-        n, bins, patches = plt.hist(df[field], bins=bin_count, color='#2ab0ff', alpha=0.7, rwidth=0.85)
-        plt.grid(axis='y', alpha=0.75)
-        plt.xlabel('Value', fontsize=15)
-        plt.ylabel('Frequency', fontsize=15)
-        plt.xticks(fontsize=12)
-        plt.yticks(fontsize=12)
-        plt.title(f'Distribution of {field}', fontsize=15)
-        plt.axvline(x=df[field].mean(), color='r', linestyle='-', label=f'Mean: {df[field].mean():.4f}')
-        plt.axvline(x=df[field].median(), color='m', linestyle='-', label=f'Median: {df[field].median():.4f}')
-        plt.legend(loc='upper right')
-        plt.show()
-
     def get_field_distribution(self, field, filters=None, include_estimated_values=False, remove_outliers=True, method='IQR', sqrt_tranf=True):
         df = self.filter_dataframe_based_on_field(field, filters, include_estimated_values, remove_outliers, method, sqrt_tranf)
+        return df
+        # self.plot_histogram(df, field)
 
-        self.plot_histogram(df, field)
-
-    def plot_distribution_boxplot(self, df, field, group_by_field):
+    def get_grouped_data(self, df, field, group_by_field):
         # Ensure the group_by_field is in the DataFrame
         if group_by_field not in df.columns:
             raise ValueError(f"{group_by_field} column is not available in the DataFrame.")
@@ -885,23 +865,16 @@ class ProductStatistics(ProductData):
         # Get unique values for the group_by_field column
         group_by_dict = self.get_group_by_dict(df, [group_by_field])
 
-        # Plotting
-        plt.figure(figsize=(10, 6))
-
         # Create a boxplot for each unique value in the group_by_field column
-        grouped_data = [df[df[group_by_field] == value][field] for value in group_by_dict[group_by_field]]
-        plt.boxplot(grouped_data, patch_artist=True, labels=group_by_dict[group_by_field])
+        # grouped_data = [df[df[group_by_field] == value][field] for value in group_by_dict[group_by_field]]
+        grouped_data_dict = {value: df[df[group_by_field] == value][field] for value in group_by_dict[group_by_field]}
 
-        plt.grid(axis='y', alpha=0.75)
-        plt.xlabel(group_by_field, fontsize=15)
-        plt.ylabel('Value', fontsize=15)
-        plt.xticks(fontsize=12, rotation=45)  # Rotate labels if there are many groups
-        plt.yticks(fontsize=12)
-        plt.title(f'Distribution of {field} by {group_by_field}', fontsize=15)
-        plt.show()
+        return grouped_data_dict
+
 
     def get_field_distribution_boxplot(self, field, group_by_field, filters=None, include_estimated_values=False, remove_outliers=True, method='IQR', sqrt_tranf=True):
         df = self.filter_dataframe_based_on_field(field, filters, include_estimated_values, remove_outliers, method, sqrt_tranf)
         # After preparing and filtering the DataFrame, plot it
-        self.plot_distribution_boxplot(df, field, group_by_field)
+        grouped_data_dict = self.get_grouped_data(df, field, group_by_field)
+        return grouped_data_dict
 
