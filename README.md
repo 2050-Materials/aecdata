@@ -238,28 +238,53 @@ Inherits all attributes from the `ProductData` class.
 ## Usage Example
 
 ```
-# Create ProductStatistics (extension of ProductData)
-stats_obj = ProductStatistics(product_data.dataframe, unit='m2')
+import matplotlib.pyplot as plt
 
-# Choose fields to group by
-group_by = [
-    'country',
-    'manufacturing_continent',
-]
+def plot_histogram(df, field):
+    bin_count = min(len(df[field].unique()), 50)  # Limit the number of bins to a maximum of 50
+    plt.figure(figsize=(10, 6))
+    n, bins, patches = plt.hist(df[field], bins=bin_count, color='#2ab0ff', alpha=0.7, rwidth=0.85)
+    plt.grid(axis='y', alpha=0.75)
+    plt.xlabel('Value', fontsize=15)
+    plt.ylabel('Frequency', fontsize=15)
+    plt.xticks(fontsize=12)
+    plt.yticks(fontsize=12)
+    plt.title(f'Distribution of {field}', fontsize=15)
+    plt.axvline(x=df[field].mean(), color='r', linestyle='-', label=f'Mean: {df[field].mean():.4f}')
+    plt.axvline(x=df[field].median(), color='m', linestyle='-', label=f'Median: {df[field].median():.4f}')
+    plt.legend(loc='upper right')
+    plt.show()
 
-# Get all available fields
-all_available_fields  = stats_obj.get_available_fields()
-
-# Calculate statistics dataframe
-stat_df = stats_obj.get_statistics(group_by=group_by, fields=all_available_fields, statistical_metrics=['count', 'mean', 'median'], include_estimated_values=False, remove_outliers=True, method='IQR', sqrt_tranf=True, min_count=3)
-
-# Apply further filters and get field distribution
 filters = {
     'material_type':'Ceramic',
+    # 'elements_nrm_1':'3.1 - Wall finishes'
 }
-stats_obj.get_field_distribution(field='material_facts.manufacturing', filters=filters, include_estimated_values=True, remove_outliers=False, method='IQR', sqrt_tranf=True)
+field = 'material_facts.manufacturing'
+df = stats_obj.get_field_distribution(field=field, filters=filters, include_estimated_values=True, remove_outliers=False, method='IQR', sqrt_tranf=True)
 
-# Get field distribution boxplot for all product types
-stats_obj.get_field_distribution_boxplot(field='material_facts.manufacturing', group_by_field='product_type', filters=None, include_estimated_values=True, remove_outliers=True, method='IQR', sqrt_tranf=True)
+plot_histogram(df, field)
+
+# With removing outliers
+field = 'material_facts.manufacturing'
+df = stats_obj.get_field_distribution(field=field, filters=filters, include_estimated_values=True, remove_outliers=True, method='IQR', sqrt_tranf=True)
+
+plot_histogram(df, field)
+
+# Field distribution boxplot
+field='material_facts.manufacturing'
+group_by_field = 'product_type'
+# Get a dict with keys product types and values dataframe series 
+grouped_data_dict = stats_obj.get_field_distribution_boxplot(field=field, group_by_field=group_by_field, filters=None, include_estimated_values=True, remove_outliers=True, method='IQR', sqrt_tranf=True)
+
+# Box-plotting
+plt.figure(figsize=(10, 6))
+plt.boxplot(grouped_data_dict.values(), patch_artist=True, labels=grouped_data_dict.keys())
+plt.grid(axis='y', alpha=0.75)
+plt.xlabel(group_by_field, fontsize=15)
+plt.ylabel('Value', fontsize=15)
+plt.xticks(fontsize=12, rotation=45)  # Rotate labels if there are many groups
+plt.yticks(fontsize=12)
+plt.title(f'Distribution of {field} by {group_by_field}', fontsize=15)
+plt.show()
 ```
 
