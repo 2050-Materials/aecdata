@@ -165,6 +165,13 @@ class User:
             else:
                 raise Exception(f"Failed call to get_products: {e}")
 
+    def get_number_of_products(self, openapi=False, **filters):
+        page = 1  # Start from the first page
+        response = self.get_products_page(page, openapi=openapi, **filters)
+
+        total_products = response['TotalProducts']
+        return total_products
+
     def get_products(self, openapi=False, **filters):
         items_per_page = 200
         all_products = []  # This will store all products across pages
