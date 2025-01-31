@@ -165,12 +165,38 @@ class User:
             else:
                 raise Exception(f"Failed call to get_products: {e}")
 
-    def get_number_of_products(self, openapi=False, **filters):
-        page = 1  # Start from the first page
-        response = self.get_products_page(page, openapi=openapi, **filters)
+    def get_number_of_products(self, **filters):
+        base_url = f'{self.base_api_url}developer/api/get_products_count'  # Use 'get_products' endpoint if needed
 
-        total_products = response['TotalProducts']
-        return total_products
+        # Prepare query components based on filters
+        query_components = []
+        for key, value in filters.items():
+            if isinstance(value, list) or isinstance(value, set):
+                for subvalue in value:
+                    query_components.append(f'{key}={subvalue}')
+            else:
+                query_components.append(f'{key}={value}')
+
+        # Construct the final URL with all filters applied
+        filter_query = '&'.join(query_components)
+        url = f"{base_url}?&{filter_query}" if filters else f"{base_url}?page={page}"
+
+        headers = {
+            'Authorization': f'Bearer {self.api_token}',
+            'Content-Type': 'application/json',
+        }
+
+        try:
+            response = requests.get(url, headers=headers)
+            response.raise_for_status()
+            total_products = response.json()['total_products']
+            return total_products
+        except requests.RequestException as e:
+            if e.response.status_code == 401:  # Unauthorized
+                raise Exception(
+                    "Unauthorized access. Consider using the free but limited version by including the parameter openapi=True in your request.")
+            else:
+                raise Exception(f"Failed call to get_products_count: {e}")
 
     def get_products(self, openapi=False, **filters):
         items_per_page = 200
