@@ -2,6 +2,7 @@ import requests
 import warnings
 from .auth import Authenticator
 from .utils import *
+from urllib.parse import urlencode
 
 # Ensure all instances of this specific warning are always shown
 warnings.simplefilter('always', UserWarning)
@@ -160,24 +161,17 @@ class User:
 
         return filter_mappings
 
+
     def get_products_page(self, page=1, openapi=False, **filters):
+        endpoint = 'get_products_open_api' if openapi else 'get_products'
+        base_url = f"{self.base_api_url}developer/api/{endpoint}"
 
-        base_url = f'{self.base_api_url}developer/api/get_products'  # Use 'get_products' endpoint if needed
-        if openapi:
-            base_url = f'{self.base_api_url}developer/api/get_products_open_api'
+        # Combine page + filters into one dict
+        all_params = {'page': page, **filters}
 
-        # Prepare query components based on filters
-        query_components = []
-        for key, value in filters.items():
-            if isinstance(value, list) or isinstance(value, set):
-                for subvalue in value:
-                    query_components.append(f'{key}={subvalue}')
-            else:
-                query_components.append(f'{key}={value}')
-
-        # Construct the final URL with all filters applied
-        filter_query = '&'.join(query_components)
-        url = f"{base_url}?page={page}&{filter_query}" if filters else f"{base_url}?page={page}"
+        # Properly percent-encode, repeating keys for sequences
+        query_string = urlencode(all_params, doseq=True)
+        url = f"{base_url}?{query_string}"
 
         headers = {
             'Authorization': f'Bearer {self.api_token}',
@@ -185,16 +179,15 @@ class User:
         }
 
         try:
-            response = requests.get(url, headers=headers)
-            response.raise_for_status()
-            products = response.json()
-            return products
-        except requests.RequestException as e:
-            if e.response.status_code == 401:  # Unauthorized
+            resp = requests.get(url, headers=headers)
+            resp.raise_for_status()
+            return resp.json()
+        except requests.HTTPError as e:
+            if resp.status_code == 401:
                 raise Exception(
-                    "Unauthorized access. Consider using the free but limited version by including the parameter openapi=True in your request.")
-            else:
-                raise Exception(f"Failed call to get_products: {e}")
+                    "Unauthorized. Try `openapi=True` for the free tier."
+                )
+            raise
 
     def get_number_of_products(self, **filters):
         base_url = f'{self.base_api_url}developer/api/get_products_count'  # Use 'get_products' endpoint if needed
