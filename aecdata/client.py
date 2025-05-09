@@ -2,6 +2,7 @@ import requests
 import warnings
 from .auth import Authenticator
 from .utils import *
+from urllib.parse import urlencode
 
 # Ensure all instances of this specific warning are always shown
 warnings.simplefilter('always', UserWarning)
@@ -110,43 +111,67 @@ class User:
 
     def get_filters_mapping(self):
         filters = self.filters  # Retrieve the filters
-        filter_mappings = {}  # Initialize the dictionary to hold all mappings
+        filter_mappings = {}
 
-        # Iterate over each filter category in the filters
-        for filter_key, filter_value in filters.items():
-            if 'filter_options' in filter_value:
-                # If filter_options is present, create a mapping for this category
-                category_mapping = {}
-                for item in filter_value['filter_options']:
-                    if 'name' in item:
-                        category_mapping[item['name']] = item['id']
-                    elif 'performance' in item:
-                        category_mapping[item['performance']] = item['id']
-                    elif 'key' in item:
-                        category_mapping[item['option']] = item['key']
-                # Assign the category mapping to the corresponding filter key
+        # these are the keys we’ll look for, in order,
+        # as the “human-readable” label for each option
+        LABEL_KEYS = [
+            'name',
+            'performance',
+            'option',
+            'key',
+            'division',
+            'section',
+            'csi_masterformat',
+            'uniclass_product_code',
+            'uniclass_system_code',
+            'uniclass_material_code',
+        ]
+
+        for filter_key, filter_def in filters.items():
+            opts = filter_def.get('filter_options') or []
+            category_mapping = {}
+
+            for item in opts:
+                # 1) skip anything that isn’t a dict
+                if not isinstance(item, dict):
+                    continue
+
+                # 2) pick your label
+                label = None
+                for lk in LABEL_KEYS:
+                    if lk in item and item[lk] is not None:
+                        label = item[lk]
+                        break
+                if label is None:
+                    # nothing we can use for a human-readable key
+                    continue
+
+                # 3) pick your id (always prefer `id`, else `key`)
+                value = item.get('id', item.get('key'))
+                if value is None:
+                    # no good numeric/string id either
+                    continue
+
+                category_mapping[label] = value
+
+            # only include categories that actually had something
+            if category_mapping:
                 filter_mappings[filter_key] = category_mapping
 
         return filter_mappings
 
+
     def get_products_page(self, page=1, openapi=False, **filters):
+        endpoint = 'get_products_open_api' if openapi else 'get_products'
+        base_url = f"{self.base_api_url}developer/api/{endpoint}"
 
-        base_url = f'{self.base_api_url}developer/api/get_products'  # Use 'get_products' endpoint if needed
-        if openapi:
-            base_url = f'{self.base_api_url}developer/api/get_products_open_api'
+        # Combine page + filters into one dict
+        all_params = {'page': page, **filters}
 
-        # Prepare query components based on filters
-        query_components = []
-        for key, value in filters.items():
-            if isinstance(value, list) or isinstance(value, set):
-                for subvalue in value:
-                    query_components.append(f'{key}={subvalue}')
-            else:
-                query_components.append(f'{key}={value}')
-
-        # Construct the final URL with all filters applied
-        filter_query = '&'.join(query_components)
-        url = f"{base_url}?page={page}&{filter_query}" if filters else f"{base_url}?page={page}"
+        # Properly percent-encode, repeating keys for sequences
+        query_string = urlencode(all_params, doseq=True)
+        url = f"{base_url}?{query_string}"
 
         headers = {
             'Authorization': f'Bearer {self.api_token}',
@@ -154,16 +179,15 @@ class User:
         }
 
         try:
-            response = requests.get(url, headers=headers)
-            response.raise_for_status()
-            products = response.json()
-            return products
-        except requests.RequestException as e:
-            if e.response.status_code == 401:  # Unauthorized
+            resp = requests.get(url, headers=headers)
+            resp.raise_for_status()
+            return resp.json()
+        except requests.HTTPError as e:
+            if resp.status_code == 401:
                 raise Exception(
-                    "Unauthorized access. Consider using the free but limited version by including the parameter openapi=True in your request.")
-            else:
-                raise Exception(f"Failed call to get_products: {e}")
+                    "Unauthorized. Try `openapi=True` for the free tier."
+                )
+            raise
 
     def get_number_of_products(self, **filters):
         base_url = f'{self.base_api_url}developer/api/get_products_count'  # Use 'get_products' endpoint if needed
