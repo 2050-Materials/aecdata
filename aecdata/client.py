@@ -113,49 +113,28 @@ class User:
         filters = self.filters  # Retrieve the filters
         filter_mappings = {}
 
-        # these are the keys we’ll look for, in order,
-        # as the “human-readable” label for each option
-        LABEL_KEYS = [
-            'name',
-            'performance',
-            'option',
-            'key',
-            'division',
-            'section',
-            'csi_masterformat',
-            'uniclass_product_code',
-            'uniclass_system_code',
-            'uniclass_material_code',
-        ]
-
         for filter_key, filter_def in filters.items():
             opts = filter_def.get('filter_options') or []
             category_mapping = {}
 
             for item in opts:
-                # 1) skip anything that isn’t a dict
+                # Skip anything that isn't a dict
                 if not isinstance(item, dict):
                     continue
 
-                # 2) pick your label
-                label = None
-                for lk in LABEL_KEYS:
-                    if lk in item and item[lk] is not None:
-                        label = item[lk]
-                        break
-                if label is None:
-                    # nothing we can use for a human-readable key
+                # In the new format, each item should have 'value' as the human-readable label
+                # and 'id' as the identifier (if present)
+                label = item.get('value')
+                if label is None or label == '':
+                    # Skip items without a readable value
                     continue
 
-                # 3) pick your id (always prefer `id`, else `key`)
-                value = item.get('id', item.get('key'))
-                if value is None:
-                    # no good numeric/string id either
-                    continue
+                # Use 'id' if available, otherwise fall back to 'value' for the mapping
+                identifier = item.get('id', label)
+                
+                category_mapping[label] = identifier
 
-                category_mapping[label] = value
-
-            # only include categories that actually had something
+            # Only include categories that actually had something
             if category_mapping:
                 filter_mappings[filter_key] = category_mapping
 
