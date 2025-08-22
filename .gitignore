@@ -79,6 +79,7 @@ ENV/
 env/
 env.bak/
 venv.bak/
+local_aecdata_venv/
 
 # Spyder project settings
 .spyderproject
